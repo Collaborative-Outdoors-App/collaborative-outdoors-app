@@ -1,0 +1,390 @@
+[
+  {
+    "trailId": "3374172",
+    "name": "Dofasco 2000 Trail",
+    "operator": null,
+    "network": null,
+    "lengthKm": 9.47,
+    "bbox": {
+      "west": -79.7549582,
+      "south": 43.1826011,
+      "east": -79.6509414,
+      "north": 43.2109443
+    },
+    "start": {
+      "lon": -79.7549582,
+      "lat": 43.2109443
+    },
+    "geometryFile": "geometry/3374172.geojson",
+    "tags": {
+      "name": "Dofasco 2000 Trail",
+      "ref": "D2000",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "3913465",
+    "name": "Little Tract",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 5.69,
+    "bbox": {
+      "west": -80.2567484,
+      "south": 43.4457785,
+      "east": -80.2476118,
+      "north": 43.4637395
+    },
+    "start": {
+      "lon": -80.2476118,
+      "lat": 43.4460195
+    },
+    "geometryFile": "geometry/3913465.geojson",
+    "tags": {
+      "name": "Little Tract",
+      "network": "lwn",
+      "ref": "L",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "3913469",
+    "name": "Vance Tract",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 2.36,
+    "bbox": {
+      "west": -80.2222044,
+      "south": 43.46146,
+      "east": -80.2162632,
+      "north": 43.4700336
+    },
+    "start": {
+      "lon": -80.2222044,
+      "lat": 43.4663669
+    },
+    "geometryFile": "geometry/3913469.geojson",
+    "tags": {
+      "name": "Vance Tract",
+      "network": "lwn",
+      "ref": "V",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "3913473",
+    "name": "Brewster Trail",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 0.6,
+    "bbox": {
+      "west": -80.3003926,
+      "south": 43.4325407,
+      "east": -80.29637,
+      "north": 43.4363878
+    },
+    "start": {
+      "lon": -80.3003926,
+      "lat": 43.4363878
+    },
+    "geometryFile": "geometry/3913473.geojson",
+    "tags": {
+      "name": "Brewster Trail",
+      "network": "lwn",
+      "ref": "BT",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "3913474",
+    "name": "Witmer Trail",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 2.56,
+    "bbox": {
+      "west": -80.2869393,
+      "south": 43.4015981,
+      "east": -80.2768947,
+      "north": 43.4112777
+    },
+    "start": {
+      "lon": -80.2869393,
+      "lat": 43.4051627
+    },
+    "geometryFile": "geometry/3913474.geojson",
+    "tags": {
+      "name": "Witmer Trail",
+      "network": "lwn",
+      "ref": "WT",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "6096055",
+    "name": "Blackbridge",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 0.62,
+    "bbox": {
+      "west": -80.3000789,
+      "south": 43.4611194,
+      "east": -80.297324,
+      "north": 43.4660255
+    },
+    "start": {
+      "lon": -80.2973474,
+      "lat": 43.4660255
+    },
+    "geometryFile": "geometry/6096055.geojson",
+    "tags": {
+      "name": "Blackbridge",
+      "network": "lwn",
+      "ref": "B",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "13766104",
+    "name": "Devil's Punchbowl Side Trail",
+    "operator": "Iroquoia Bruce Trail Club",
+    "network": "lwn",
+    "lengthKm": 0.95,
+    "bbox": {
+      "west": -79.7613925,
+      "south": 43.2100843,
+      "east": -79.7553811,
+      "north": 43.2119003
+    },
+    "start": {
+      "lon": -79.7589787,
+      "lat": 43.2119003
+    },
+    "geometryFile": "geometry/13766104.geojson",
+    "tags": {
+      "from": "Bruce Trail",
+      "name": "Devil's Punchbowl Side Trail",
+      "network": "lwn",
+      "network:type": "lwn",
+      "operator": "Iroquoia Bruce Trail Club",
+      "route": "hiking",
+      "to": "Devil's Punchbowl Conservation Area",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "13766231",
+    "name": "Red Hill Creek Side Trail",
+    "operator": "Iroquoia Bruce Trail Club",
+    "network": "lwn",
+    "lengthKm": 0,
+    "bbox": {
+      "west": -79.8151812,
+      "south": 43.2111642,
+      "east": -79.8151273,
+      "north": 43.2111723
+    },
+    "start": {
+      "lon": -79.8151273,
+      "lat": 43.2111642
+    },
+    "geometryFile": "geometry/13766231.geojson",
+    "tags": {
+      "name": "Red Hill Creek Side Trail",
+      "network": "lwn",
+      "network:type": "lwn",
+      "operator": "Iroquoia Bruce Trail Club",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "13871788",
+    "name": "Hamilton-Brantford Rail Trail",
+    "operator": "Hamilton Conservation Authority, Grand River Conservation Authority",
+    "network": "rwn",
+    "lengthKm": 31.21,
+    "bbox": {
+      "west": -80.2201581,
+      "south": 43.1381015,
+      "east": -79.9317985,
+      "north": 43.2579223
+    },
+    "start": {
+      "lon": -79.9359706,
+      "lat": 43.2563182
+    },
+    "geometryFile": "geometry/13871788.geojson",
+    "tags": {
+      "from": "Ewen Road, Hamilton",
+      "name": "Hamilton-Brantford Rail Trail",
+      "network": "rwn",
+      "network:type": "rwn",
+      "operator": "Hamilton Conservation Authority, Grand River Conservation Authority",
+      "route": "hiking",
+      "to": "Jaycees Park, Brantford",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "14114296",
+    "name": "Arteban Road Side Trail",
+    "operator": "Iroquoia Bruce Trail Club",
+    "network": "lwn",
+    "lengthKm": 3.13,
+    "bbox": {
+      "west": -79.993348,
+      "south": 43.2369563,
+      "east": -79.9734223,
+      "north": 43.247159
+    },
+    "start": {
+      "lon": -79.9734223,
+      "lat": 43.2395356
+    },
+    "geometryFile": "geometry/14114296.geojson",
+    "tags": {
+      "colour": "blue",
+      "direction": "both",
+      "name": "Arteban Road Side Trail",
+      "network": "lwn",
+      "operator": "Iroquoia Bruce Trail Club",
+      "osmc:symbol": "blue:white:blue_bar",
+      "route": "hiking",
+      "symbol": "blue stripe",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "14914091",
+    "name": "Heritage Green Community Trust (HGCT) Trail",
+    "operator": "Hamilton Conservation Authority",
+    "network": "lwn",
+    "lengthKm": 1.1,
+    "bbox": {
+      "west": -79.7512316,
+      "south": 43.1998698,
+      "east": -79.7421032,
+      "north": 43.2036719
+    },
+    "start": {
+      "lon": -79.7512316,
+      "lat": 43.1998936
+    },
+    "geometryFile": "geometry/14914091.geojson",
+    "tags": {
+      "name": "Heritage Green Community Trust (HGCT) Trail",
+      "network": "lwn",
+      "operator": "Hamilton Conservation Authority",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "16146982",
+    "name": "Woodlands Trail",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 1.64,
+    "bbox": {
+      "west": -80.2867843,
+      "south": 43.3778225,
+      "east": -80.2825209,
+      "north": 43.3817294
+    },
+    "start": {
+      "lon": -80.2861886,
+      "lat": 43.3796799
+    },
+    "geometryFile": "geometry/16146982.geojson",
+    "tags": {
+      "name": "Woodlands Trail",
+      "network": "lwn",
+      "network:type": "lwn",
+      "roundtrip": "yes",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "16146983",
+    "name": "Toyota Way Trail",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 3.21,
+    "bbox": {
+      "west": -80.2834536,
+      "south": 43.3790432,
+      "east": -80.2756568,
+      "north": 43.3843468
+    },
+    "start": {
+      "lon": -80.2825209,
+      "lat": 43.3790878
+    },
+    "geometryFile": "geometry/16146983.geojson",
+    "tags": {
+      "name": "Toyota Way Trail",
+      "network": "lwn",
+      "network:type": "lwn",
+      "roundtrip": "yes",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "16146984",
+    "name": "Deer Run Trail",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 2.47,
+    "bbox": {
+      "west": -80.2794182,
+      "south": 43.375859,
+      "east": -80.2712727,
+      "north": 43.3839661
+    },
+    "start": {
+      "lon": -80.2794182,
+      "lat": 43.3808156
+    },
+    "geometryFile": "geometry/16146984.geojson",
+    "tags": {
+      "name": "Deer Run Trail",
+      "network": "lwn",
+      "network:type": "lwn",
+      "roundtrip": "no",
+      "route": "hiking",
+      "type": "route"
+    }
+  },
+  {
+    "trailId": "16146985",
+    "name": "Conifer Trail",
+    "operator": null,
+    "network": "lwn",
+    "lengthKm": 0.86,
+    "bbox": {
+      "west": -80.2751047,
+      "south": 43.3778406,
+      "east": -80.2708718,
+      "north": 43.3805666
+    },
+    "start": {
+      "lon": -80.2738186,
+      "lat": 43.3778406
+    },
+    "geometryFile": "geometry/16146985.geojson",
+    "tags": {
+      "name": "Conifer Trail",
+      "network": "lwn",
+      "network:type": "lwn",
+      "route": "hiking",
+      "type": "route"
+    }
+  }
+]

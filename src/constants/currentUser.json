@@ -1,0 +1,15 @@
+{
+  "currentUser": {
+    "userId": "u1",
+    "firstName": "Bob",
+    "lastName": "Smith",
+    "email": "bob.smith@example.com",
+    "dateOfBirth": "1990-05-17",
+    "weightKg": 82,
+    "emergencyContacts": [
+      { "contactId": "ec1", "firstName": "Carol", "lastName": "Smith", "phoneNumber": "123-555-0142" },
+      { "contactId": "ec2", "firstName": "Dave", "lastName": "Smith", "phoneNumber": "123-555-0187" }
+    ],
+    "groupIds": ["g1", "g2"]
+  }
+}
