@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, Keyboard, TouchableOpacity, Text } from "react-native";
 import {
@@ -54,6 +54,7 @@ export default function TrailSearchScreen() {
   const [distanceFilter, setDistanceFilter] = useState(null);
   const [hikeActive, setHikeActive] = useState(false);
   const [activeHikePanel, setActiveHikePanel] = useState(null);
+  const [hikeSeconds, setHikeSeconds] = useState(0);
   const cameraRef = useRef(null);
   const currentPosition = useCurrentPosition();
 
@@ -61,6 +62,19 @@ export default function TrailSearchScreen() {
     LocationManager.requestPermissions().then((granted) => {
       if (granted) LocationManager.start();
     });
+  }, []);
+
+  useEffect(() => {
+    if (!hikeActive) return;
+    const timer = setInterval(() => setHikeSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [hikeActive]);
+
+  const endHike = useCallback(() => {
+    setHikeActive(false);
+    setSelectedTrailId(null);
+    setActiveHikePanel(null);
+    setHikeSeconds(0);
   }, []);
 
   const handleZoomToUserLocation = async () => {
@@ -180,11 +194,8 @@ export default function TrailSearchScreen() {
           {activeHikePanel === "activity" && (
             <HikeActivityPanel
               trail={selectedTrail}
-              onEndHike={() => {
-                setHikeActive(false);
-                setSelectedTrailId(null);
-                setActiveHikePanel(null);
-              }}
+              seconds={hikeSeconds}
+              onEndHike={endHike}
               onMinimize={() => setActiveHikePanel(null)}
             />
           )}
@@ -199,6 +210,7 @@ export default function TrailSearchScreen() {
           onStartHike={() => {
             setHikeActive(true);
             setActiveHikePanel("activity");
+            setHikeSeconds(0);
           }}
         />
       )}

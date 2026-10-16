@@ -1,16 +1,7 @@
-import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function HikeActivityPanel({ trail, onEndHike, onMinimize }) {
-  const [seconds, setSeconds] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
+export default function HikeActivityPanel({ trail, seconds, onEndHike, onMinimize }) {
   const timeStr = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-
   const stats = [
     { label: "Time Elapsed", value: timeStr },
     { label: "Distance", value: "0.00 km" },
