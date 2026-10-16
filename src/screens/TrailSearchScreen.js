@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Keyboard  } from "react-native";
 import {
   Map,
   Camera,
@@ -9,6 +9,9 @@ import {
 } from "@maplibre/maplibre-react-native";
 import { getTrailGeometry } from "../constants/trails/geometry";
 import trailsData from "../constants/trails/trails.json";
+import TrailDetailsPanel from "../components/TrailDetailsPanel";
+import TrailSearchBar from "../components/TrailSearchBar";
+import DistanceFilter from "../components/DistanceFilter";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
 // Lighter style: swap "basic-v2" for another MapTiler style ID if you prefer
@@ -22,19 +25,35 @@ const INITIAL_VIEW_STATE = {
 
 export default function TrailSearchScreen() {
   const [selectedTrailId, setSelectedTrailId] = useState(null);
+  const [distanceFilter, setDistanceFilter] = useState(null);
   const cameraRef = useRef(null);
+
+  const filteredTrails = useMemo(() => {
+    if (!distanceFilter || distanceFilter.id === "all") return trailsData;
+    return trailsData.filter((t) => {
+      const len = t.lengthKm ?? 0;
+      if (distanceFilter.min != null && len < distanceFilter.min) return false;
+      if (distanceFilter.max != null && len > distanceFilter.max) return false;
+      return true;
+    });
+  }, [distanceFilter]);
+
+  const selectedTrail = useMemo(() => {
+    if (!selectedTrailId) return null;
+    return filteredTrails.find((t) => String(t.trailId) === String(selectedTrailId));
+  }, [selectedTrailId, filteredTrails]);
 
   // Path geometry for the selected trail
   const selectedGeometry = useMemo(() => {
-    if (!selectedTrailId) return null;
-    return getTrailGeometry(selectedTrailId);
-  }, [selectedTrailId]);
+    if (!selectedTrail) return null;
+    return getTrailGeometry(selectedTrail.trailId);
+  }, [selectedTrail]);
 
   // Trail start points as a GeoJSON FeatureCollection
   const trailsGeoJSON = useMemo(
     () => ({
       type: "FeatureCollection",
-      features: trailsData.map((trail) => ({
+      features: filteredTrails.map((trail) => ({
         type: "Feature",
         id: trail.trailId,
         geometry: {
@@ -47,15 +66,10 @@ export default function TrailSearchScreen() {
         },
       })),
     }),
-    []
+    [filteredTrails]
   );
 
-  // Tapping a marker selects the trail, shows its path, and fits the camera
-  const handleTrailPress = (event) => {
-    const features = event?.features || event?.nativeEvent?.features;
-    if (!features || features.length === 0) return;
-
-    const id = features[0].properties.id;
+  const handleSelectTrail = (id) => {
     setSelectedTrailId(id);
 
     const trailItem = trailsData.find((t) => String(t.trailId) === String(id));
@@ -75,10 +89,19 @@ export default function TrailSearchScreen() {
     }
   };
 
+  // Tapping a marker selects the trail, shows its path, and fits the camera
+  const handleTrailPress = (event) => {
+    const features = event?.features || event?.nativeEvent?.features;
+    if (!features || features.length === 0) return;
+    handleSelectTrail(features[0].properties.id);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      <Map style={styles.map} mapStyle={MAP_STYLE_URL}>
+      <TrailSearchBar onSelectTrail={handleSelectTrail} trails={filteredTrails} />
+      <DistanceFilter onFilterChange={setDistanceFilter} />
+      <Map style={styles.map} mapStyle={MAP_STYLE_URL} onPress={() => Keyboard.dismiss()}>
         <Camera ref={cameraRef} initialViewState={INITIAL_VIEW_STATE} />
 
         {/* Selected trail path */}
@@ -150,6 +173,10 @@ export default function TrailSearchScreen() {
           />
         </GeoJSONSource>
       </Map>
+      <TrailDetailsPanel
+        trail={selectedTrail}
+        onClose={() => setSelectedTrailId(null)}
+      />
     </View>
   );
 }
