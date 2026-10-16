@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View, Keyboard  } from "react-native";
+import { StyleSheet, View, Keyboard, TouchableOpacity, Text } from "react-native";
 import {
   Map,
   Camera,
@@ -16,6 +16,7 @@ import TrailDetailsPanel from "../components/TrailDetailsPanel";
 import TrailSearchBar from "../components/TrailSearchBar";
 import DistanceFilter from "../components/DistanceFilter";
 import HikeActivityPanel from "../components/HikeActivityPanel";
+import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
@@ -32,7 +33,7 @@ export default function TrailSearchScreen() {
   const [selectedTrailId, setSelectedTrailId] = useState(null);
   const [distanceFilter, setDistanceFilter] = useState(null);
   const [hikeActive, setHikeActive] = useState(false);
-  const [isHikePanelCollapsed, setIsHikePanelCollapsed] = useState(false);
+  const [activeHikePanel, setActiveHikePanel] = useState(null);
   const cameraRef = useRef(null);
   const currentPosition = useCurrentPosition();
 
@@ -68,12 +69,16 @@ export default function TrailSearchScreen() {
   };
 
   const locationButtonBottom = hikeActive
-    ? isHikePanelCollapsed
-      ? 110
-      : 220
+    ? activeHikePanel === "vitals"
+      ? 315
+      : activeHikePanel === "activity"
+      ? 220
+      : 24
     : selectedTrailId
     ? 140
     : 24;
+
+  const hikeButtonsBottom = locationButtonBottom;
 
   const filteredTrails = useMemo(() => {
     if (!distanceFilter || distanceFilter.id === "all") return trailsData;
@@ -229,22 +234,73 @@ export default function TrailSearchScreen() {
         onPress={handleZoomToUserLocation}
         style={{ bottom: locationButtonBottom }}
       />
+      {hikeActive && (
+        <View style={[styles.hikeButtonsRow, { bottom: hikeButtonsBottom }]}>
+          <TouchableOpacity
+            style={[
+              styles.hikeButton,
+              activeHikePanel === "activity" && styles.hikeButtonActive,
+            ]}
+            onPress={() =>
+              setActiveHikePanel(
+                activeHikePanel === "activity" ? null : "activity"
+              )
+            }
+          >
+            <Text
+              style={[
+                styles.hikeButtonText,
+                activeHikePanel === "activity" && styles.hikeButtonTextActive,
+              ]}
+            >
+              ⏱ Activity
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.hikeButton,
+              activeHikePanel === "vitals" && styles.hikeButtonActive,
+            ]}
+            onPress={() =>
+              setActiveHikePanel(activeHikePanel === "vitals" ? null : "vitals")
+            }
+          >
+            <Text
+              style={[
+                styles.hikeButtonText,
+                activeHikePanel === "vitals" && styles.hikeButtonTextActive,
+              ]}
+            >
+              ❤️ Vitals
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {hikeActive ? (
-        <HikeActivityPanel
-          trail={selectedTrail}
-          isCollapsed={isHikePanelCollapsed}
-          onToggleCollapse={() => setIsHikePanelCollapsed((prev) => !prev)}
-          onEndHike={() => {
-            setHikeActive(false);
-            setSelectedTrailId(null);
-            setIsHikePanelCollapsed(false);
-          }}
-        />
+        <>
+          {activeHikePanel === "activity" && (
+            <HikeActivityPanel
+              trail={selectedTrail}
+              onEndHike={() => {
+                setHikeActive(false);
+                setSelectedTrailId(null);
+                setActiveHikePanel(null);
+              }}
+              onMinimize={() => setActiveHikePanel(null)}
+            />
+          )}
+          {activeHikePanel === "vitals" && (
+            <GroupVitalsPanel onMinimize={() => setActiveHikePanel(null)} />
+          )}
+        </>
       ) : (
         <TrailDetailsPanel
           trail={selectedTrail}
           onClose={() => setSelectedTrailId(null)}
-          onStartHike={() => setHikeActive(true)}
+          onStartHike={() => {
+            setHikeActive(true);
+            setActiveHikePanel("activity");
+          }}
         />
       )}
     </View>
@@ -254,4 +310,35 @@ export default function TrailSearchScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  hikeButtonsRow: {
+    position: "absolute",
+    left: 16,
+    flexDirection: "row",
+    gap: 8,
+    zIndex: 10,
+  },
+  hikeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  hikeButtonActive: {
+    backgroundColor: "#0f172a",
+  },
+  hikeButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  hikeButtonTextActive: {
+    color: "#ffffff",
+  },
 });

@@ -1,17 +1,8 @@
 import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function HikeActivityPanel({
-  trail,
-  onEndHike,
-  isCollapsed: controlledCollapsed,
-  onToggleCollapse,
-}) {
+export default function HikeActivityPanel({ trail, onEndHike, onMinimize }) {
   const [seconds, setSeconds] = useState(0);
-  const [internalCollapsed, setInternalCollapsed] = useState(false);
-
-  const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
-  const toggleCollapse = onToggleCollapse || (() => setInternalCollapsed(!internalCollapsed));
 
   useEffect(() => {
     const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -35,19 +26,13 @@ export default function HikeActivityPanel({
         </View>
         <TouchableOpacity
           style={styles.toggleButton}
-          onPress={toggleCollapse}
+          onPress={onMinimize}
         >
-          <Text style={styles.toggleText}>{isCollapsed ? "▲ Expand" : "▼ Minimize"}</Text>
+          <Text style={styles.toggleText}>▼ Minimize</Text>
         </TouchableOpacity>
       </View>
 
-      {isCollapsed ? (
-        <View style={styles.collapsedRow}>
-          <Text style={styles.collapsedStat}>⏱ {formatTime(seconds)}</Text>
-          <Text style={styles.collapsedStat}>📍 {distanceKm.toFixed(2)} km</Text>
-        </View>
-      ) : (
-        <View style={styles.body}>
+      <View style={styles.body}>
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={styles.statLabel}>Time Elapsed</Text>
@@ -67,7 +52,6 @@ export default function HikeActivityPanel({
             <Text style={styles.endButtonText}>End Hike</Text>
           </TouchableOpacity>
         </View>
-      )}
     </View>
   );
 }
