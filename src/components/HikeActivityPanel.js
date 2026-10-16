@@ -1,9 +1,17 @@
 import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function HikeActivityPanel({ trail, onEndHike }) {
+export default function HikeActivityPanel({
+  trail,
+  onEndHike,
+  isCollapsed: controlledCollapsed,
+  onToggleCollapse,
+}) {
   const [seconds, setSeconds] = useState(0);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+
+  const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
+  const toggleCollapse = onToggleCollapse || (() => setInternalCollapsed(!internalCollapsed));
 
   useEffect(() => {
     const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -27,7 +35,7 @@ export default function HikeActivityPanel({ trail, onEndHike }) {
         </View>
         <TouchableOpacity
           style={styles.toggleButton}
-          onPress={() => setIsCollapsed(!isCollapsed)}
+          onPress={toggleCollapse}
         >
           <Text style={styles.toggleText}>{isCollapsed ? "▲ Expand" : "▼ Minimize"}</Text>
         </TouchableOpacity>

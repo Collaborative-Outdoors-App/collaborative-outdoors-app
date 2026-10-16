@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, Keyboard  } from "react-native";
 import {
@@ -6,6 +6,9 @@ import {
   Camera,
   GeoJSONSource,
   Layer,
+  UserLocation,
+  LocationManager,
+  useCurrentPosition,
 } from "@maplibre/maplibre-react-native";
 import { getTrailGeometry } from "../constants/trails/geometry";
 import trailsData from "../constants/trails/trails.json";
@@ -13,6 +16,7 @@ import TrailDetailsPanel from "../components/TrailDetailsPanel";
 import TrailSearchBar from "../components/TrailSearchBar";
 import DistanceFilter from "../components/DistanceFilter";
 import HikeActivityPanel from "../components/HikeActivityPanel";
+import LocationButton from "../components/LocationButton";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
 // Lighter style: swap "basic-v2" for another MapTiler style ID if you prefer
@@ -28,7 +32,48 @@ export default function TrailSearchScreen() {
   const [selectedTrailId, setSelectedTrailId] = useState(null);
   const [distanceFilter, setDistanceFilter] = useState(null);
   const [hikeActive, setHikeActive] = useState(false);
+  const [isHikePanelCollapsed, setIsHikePanelCollapsed] = useState(false);
   const cameraRef = useRef(null);
+  const currentPosition = useCurrentPosition();
+
+  useEffect(() => {
+    LocationManager.requestPermissions().then((granted) => {
+      if (granted) {
+        LocationManager.start();
+      }
+    });
+  }, []);
+
+  const handleZoomToUserLocation = async () => {
+    let coords = currentPosition?.coords;
+    if (!coords) {
+      const pos = await LocationManager.getCurrentPosition();
+      coords = pos?.coords;
+    }
+    if (!coords) {
+      const granted = await LocationManager.requestPermissions();
+      if (granted) {
+        LocationManager.start();
+        const pos = await LocationManager.getCurrentPosition();
+        coords = pos?.coords;
+      }
+    }
+    if (coords && cameraRef.current) {
+      cameraRef.current.flyTo({
+        center: [coords.longitude, coords.latitude],
+        zoom: 15,
+        duration: 1000,
+      });
+    }
+  };
+
+  const locationButtonBottom = hikeActive
+    ? isHikePanelCollapsed
+      ? 110
+      : 220
+    : selectedTrailId
+    ? 140
+    : 24;
 
   const filteredTrails = useMemo(() => {
     if (!distanceFilter || distanceFilter.id === "all") return trailsData;
@@ -109,6 +154,7 @@ export default function TrailSearchScreen() {
       )}
       <Map style={styles.map} mapStyle={MAP_STYLE_URL} onPress={() => Keyboard.dismiss()}>
         <Camera ref={cameraRef} initialViewState={INITIAL_VIEW_STATE} />
+        <UserLocation animated />
 
         {/* Selected trail path */}
         {selectedGeometry && (
@@ -179,12 +225,19 @@ export default function TrailSearchScreen() {
           />
         </GeoJSONSource>
       </Map>
+      <LocationButton
+        onPress={handleZoomToUserLocation}
+        style={{ bottom: locationButtonBottom }}
+      />
       {hikeActive ? (
         <HikeActivityPanel
           trail={selectedTrail}
+          isCollapsed={isHikePanelCollapsed}
+          onToggleCollapse={() => setIsHikePanelCollapsed((prev) => !prev)}
           onEndHike={() => {
             setHikeActive(false);
             setSelectedTrailId(null);
+            setIsHikePanelCollapsed(false);
           }}
         />
       ) : (
