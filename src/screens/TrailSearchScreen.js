@@ -12,6 +12,7 @@ import trailsData from "../constants/trails/trails.json";
 import TrailDetailsPanel from "../components/TrailDetailsPanel";
 import TrailSearchBar from "../components/TrailSearchBar";
 import DistanceFilter from "../components/DistanceFilter";
+import HikeActivityPanel from "../components/HikeActivityPanel";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
 // Lighter style: swap "basic-v2" for another MapTiler style ID if you prefer
@@ -26,6 +27,7 @@ const INITIAL_VIEW_STATE = {
 export default function TrailSearchScreen() {
   const [selectedTrailId, setSelectedTrailId] = useState(null);
   const [distanceFilter, setDistanceFilter] = useState(null);
+  const [hikeActive, setHikeActive] = useState(false);
   const cameraRef = useRef(null);
 
   const filteredTrails = useMemo(() => {
@@ -99,8 +101,12 @@ export default function TrailSearchScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      <TrailSearchBar onSelectTrail={handleSelectTrail} trails={filteredTrails} />
-      <DistanceFilter onFilterChange={setDistanceFilter} />
+      {!hikeActive && (
+        <>
+          <TrailSearchBar onSelectTrail={handleSelectTrail} trails={filteredTrails} />
+          <DistanceFilter onFilterChange={setDistanceFilter} />
+        </>
+      )}
       <Map style={styles.map} mapStyle={MAP_STYLE_URL} onPress={() => Keyboard.dismiss()}>
         <Camera ref={cameraRef} initialViewState={INITIAL_VIEW_STATE} />
 
@@ -173,10 +179,21 @@ export default function TrailSearchScreen() {
           />
         </GeoJSONSource>
       </Map>
-      <TrailDetailsPanel
-        trail={selectedTrail}
-        onClose={() => setSelectedTrailId(null)}
-      />
+      {hikeActive ? (
+        <HikeActivityPanel
+          trail={selectedTrail}
+          onEndHike={() => {
+            setHikeActive(false);
+            setSelectedTrailId(null);
+          }}
+        />
+      ) : (
+        <TrailDetailsPanel
+          trail={selectedTrail}
+          onClose={() => setSelectedTrailId(null)}
+          onStartHike={() => setHikeActive(true)}
+        />
+      )}
     </View>
   );
 }

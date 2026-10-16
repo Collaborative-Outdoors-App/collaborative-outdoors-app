@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function TrailDetailsPanel({ trail, onClose }) {
+export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
   if (!trail) return null;
 
   return (
@@ -16,7 +16,7 @@ export default function TrailDetailsPanel({ trail, onClose }) {
       </View>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={[styles.button, styles.primaryButton]}>
+        <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={onStartHike}>
           <Text style={styles.primaryButtonText}>Start</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.button, styles.secondaryButton]}>
