@@ -92,8 +92,8 @@ export default function TrailSearchScreen() {
 
   const selectedTrail = useMemo(() => {
     if (!selectedTrailId) return null;
-    return filteredTrails.find((t) => String(t.trailId) === String(selectedTrailId));
-  }, [selectedTrailId, filteredTrails]);
+    return trailsData.find((t) => String(t.trailId) === String(selectedTrailId));
+  }, [selectedTrailId]);
 
   // Path geometry for the selected trail
   const selectedGeometry = useMemo(() => {
@@ -101,11 +101,19 @@ export default function TrailSearchScreen() {
     return getTrailGeometry(selectedTrail.trailId);
   }, [selectedTrail]);
 
+  // Only render the active trail when on an active hike
+  const displayTrails = useMemo(() => {
+    if (hikeActive) {
+      return selectedTrail ? [selectedTrail] : [];
+    }
+    return filteredTrails;
+  }, [hikeActive, selectedTrail, filteredTrails]);
+
   // Trail start points as a GeoJSON FeatureCollection
   const trailsGeoJSON = useMemo(
     () => ({
       type: "FeatureCollection",
-      features: filteredTrails.map((trail) => ({
+      features: displayTrails.map((trail) => ({
         type: "Feature",
         id: trail.trailId,
         geometry: {
@@ -118,7 +126,7 @@ export default function TrailSearchScreen() {
         },
       })),
     }),
-    [filteredTrails]
+    [displayTrails]
   );
 
   const handleSelectTrail = (id) => {
@@ -143,6 +151,7 @@ export default function TrailSearchScreen() {
 
   // Tapping a marker selects the trail, shows its path, and fits the camera
   const handleTrailPress = (event) => {
+    if (hikeActive) return;
     const features = event?.features || event?.nativeEvent?.features;
     if (!features || features.length === 0) return;
     handleSelectTrail(features[0].properties.id);

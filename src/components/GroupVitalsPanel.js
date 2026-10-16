@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-nati
 const INITIAL_MEMBERS = [
   { id: "u1", code: "M1", name: "Member 1 (You)", bpm: 118, condition: "Normal" },
   { id: "u2", code: "M2", name: "Member 2", bpm: 112, condition: "Normal" },
-  { id: "u3", code: "M3", name: "Member 3", bpm: 124, condition: "Normal" },
+  { id: "u3", code: "M3", name: "Member 3", bpm: 154, condition: "Overexerted" },
   { id: "u4", code: "M4", name: "Member 4", bpm: 98, condition: "Normal" },
   { id: "u5", code: "M5", name: "Member 5", bpm: 108, condition: "Normal" },
 ];
