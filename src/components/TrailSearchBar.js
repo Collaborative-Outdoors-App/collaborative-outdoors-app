@@ -6,9 +6,8 @@ export default function TrailSearchBar({ onSelectTrail, trails = trailsData }) {
   const [query, setQuery] = useState("");
 
   const filteredTrails = useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase();
-    return trails.filter((trail) => trail.name.toLowerCase().includes(q));
+    const q = query.trim().toLowerCase();
+    return q ? trails.filter((t) => t.name.toLowerCase().includes(q)) : [];
   }, [query, trails]);
 
   const handleSelect = (trailId) => {
@@ -26,75 +25,43 @@ export default function TrailSearchBar({ onSelectTrail, trails = trailsData }) {
         onChangeText={setQuery}
       />
       {filteredTrails.length > 0 && (
-        <View style={styles.dropdown}>
-          <FlatList
-            data={filteredTrails}
-            keyExtractor={(item) => String(item.trailId)}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.item}
-                onPress={() => handleSelect(item.trailId)}
-              >
-                <Text style={styles.itemText}>{item.name}</Text>
-                {item.lengthKm ? (
-                  <Text style={styles.itemSubtext}>{item.lengthKm} km</Text>
-                ) : null}
-              </TouchableOpacity>
-            )}
-          />
-        </View>
+        <FlatList
+          style={styles.dropdown}
+          data={filteredTrails}
+          keyExtractor={(item) => String(item.trailId)}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.item} onPress={() => handleSelect(item.trailId)}>
+              <Text style={styles.itemText}>{item.name}</Text>
+              {item.lengthKm ? <Text style={styles.itemSubtext}>{item.lengthKm} km</Text> : null}
+            </TouchableOpacity>
+          )}
+        />
       )}
     </View>
   );
 }
 
+const shadow = {
+  backgroundColor: "#fff",
+  borderRadius: 8,
+  elevation: 4,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+};
+
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 50,
-    left: 16,
-    right: 16,
-    zIndex: 10,
-  },
-  input: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: "#0f172a",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  dropdown: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginTop: 4,
-    maxHeight: 200,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+  container: { position: "absolute", top: 50, left: 16, right: 16, zIndex: 10 },
+  input: { ...shadow, paddingHorizontal: 14, paddingVertical: 10, fontSize: 16, color: "#0f172a" },
+  dropdown: { ...shadow, marginTop: 4, maxHeight: 200 },
   item: {
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#e2e8f0",
   },
-  itemText: {
-    fontSize: 15,
-    color: "#0f172a",
-    fontWeight: "500",
-  },
-  itemSubtext: {
-    fontSize: 12,
-    color: "#64748b",
-    marginTop: 2,
-  },
+  itemText: { fontSize: 15, color: "#0f172a", fontWeight: "500" },
+  itemSubtext: { fontSize: 12, color: "#64748b", marginTop: 2 },
 });

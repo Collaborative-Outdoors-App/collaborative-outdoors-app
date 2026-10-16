@@ -3,30 +3,30 @@ import { View, TouchableOpacity, StyleSheet } from "react-native";
 export default function LocationButton({ onPress, style }) {
   return (
     <TouchableOpacity
-      style={[styles.button, style]}
+      style={[styles.btn, style]}
       onPress={onPress}
       activeOpacity={0.8}
       accessibilityLabel="Zoom to current location"
     >
-      <View style={styles.iconCircle}>
-        <View style={styles.iconDot} />
-        <View style={[styles.tick, styles.tickTop]} />
-        <View style={[styles.tick, styles.tickBottom]} />
-        <View style={[styles.tick, styles.tickLeft]} />
-        <View style={[styles.tick, styles.tickRight]} />
+      <View style={styles.circle}>
+        <View style={styles.dot} />
+        <View style={[styles.tick, { top: -4, width: 2, height: 3 }]} />
+        <View style={[styles.tick, { bottom: -4, width: 2, height: 3 }]} />
+        <View style={[styles.tick, { left: -4, width: 3, height: 2 }]} />
+        <View style={[styles.tick, { right: -4, width: 3, height: 2 }]} />
       </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
+  btn: {
     position: "absolute",
     right: 16,
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  iconCircle: {
+  circle: {
     width: 18,
     height: 18,
     borderRadius: 9,
@@ -45,34 +45,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#2563eb",
-  },
-  tick: {
-    position: "absolute",
-    backgroundColor: "#2563eb",
-  },
-  tickTop: {
-    top: -4,
-    width: 2,
-    height: 3,
-  },
-  tickBottom: {
-    bottom: -4,
-    width: 2,
-    height: 3,
-  },
-  tickLeft: {
-    left: -4,
-    width: 3,
-    height: 2,
-  },
-  tickRight: {
-    right: -4,
-    width: 3,
-    height: 2,
-  },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#2563eb" },
+  tick: { position: "absolute", backgroundColor: "#2563eb" },
 });

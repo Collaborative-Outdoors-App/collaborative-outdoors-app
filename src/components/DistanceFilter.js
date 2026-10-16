@@ -12,10 +12,10 @@ export default function DistanceFilter({ onFilterChange }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(OPTIONS[0]);
 
-  const handleSelect = (option) => {
-    setSelected(option);
+  const handleSelect = (opt) => {
+    setSelected(opt);
     setOpen(false);
-    onFilterChange(option);
+    onFilterChange(opt);
   };
 
   const isFiltered = selected.id !== "all";
@@ -23,27 +23,28 @@ export default function DistanceFilter({ onFilterChange }) {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.button, isFiltered && styles.buttonActive]}
-        onPress={() => setOpen(!open)}
+        style={[styles.btn, isFiltered && styles.btnActive]}
+        onPress={() => setOpen((prev) => !prev)}
       >
-        <Text style={[styles.buttonText, isFiltered && styles.buttonTextActive]}>
+        <Text style={[styles.btnText, isFiltered && styles.btnTextActive]}>
           {selected.label} ▾
         </Text>
       </TouchableOpacity>
 
       {open && (
         <View style={styles.dropdown}>
-          {OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.id}
-              style={[styles.option, opt.id === selected.id && styles.optionSelected]}
-              onPress={() => handleSelect(opt)}
-            >
-              <Text style={[styles.optionText, opt.id === selected.id && styles.optionTextSelected]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {OPTIONS.map((opt) => {
+            const isSel = opt.id === selected.id;
+            return (
+              <TouchableOpacity
+                key={opt.id}
+                style={[styles.opt, isSel && styles.optSelected]}
+                onPress={() => handleSelect(opt)}
+              >
+                <Text style={[styles.optText, isSel && styles.optTextSelected]}>{opt.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
     </View>
@@ -51,13 +52,8 @@ export default function DistanceFilter({ onFilterChange }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 106,
-    left: 16,
-    zIndex: 9,
-  },
-  button: {
+  container: { position: "absolute", top: 106, left: 16, zIndex: 9 },
+  btn: {
     backgroundColor: "#fff",
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -68,17 +64,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 3,
   },
-  buttonActive: {
-    backgroundColor: "#2563eb",
-  },
-  buttonText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#334155",
-  },
-  buttonTextActive: {
-    color: "#fff",
-  },
+  btnActive: { backgroundColor: "#2563eb" },
+  btnText: { fontSize: 13, fontWeight: "600", color: "#334155" },
+  btnTextActive: { color: "#fff" },
   dropdown: {
     backgroundColor: "#fff",
     borderRadius: 8,
@@ -90,19 +78,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     overflow: "hidden",
   },
-  option: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-  optionSelected: {
-    backgroundColor: "#eff6ff",
-  },
-  optionText: {
-    fontSize: 13,
-    color: "#334155",
-  },
-  optionTextSelected: {
-    color: "#2563eb",
-    fontWeight: "600",
-  },
+  opt: { paddingVertical: 8, paddingHorizontal: 14 },
+  optSelected: { backgroundColor: "#eff6ff" },
+  optText: { fontSize: 13, color: "#334155" },
+  optTextSelected: { color: "#2563eb", fontWeight: "600" },
 });

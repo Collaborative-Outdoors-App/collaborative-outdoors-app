@@ -6,21 +6,21 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
   return (
     <View style={styles.panel}>
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
+        <View style={{ flex: 1, marginRight: 8 }}>
           <Text style={styles.title} numberOfLines={1}>{trail.name}</Text>
           {trail.lengthKm ? <Text style={styles.subtitle}>{trail.lengthKm} km</Text> : null}
         </View>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <TouchableOpacity style={{ padding: 4 }} onPress={onClose}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={onStartHike}>
-          <Text style={styles.primaryButtonText}>Start</Text>
+      <View style={styles.row}>
+        <TouchableOpacity style={[styles.btn, styles.primaryBtn]} onPress={onStartHike}>
+          <Text style={[styles.btnText, { color: "#fff" }]}>Start</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.secondaryButton]}>
-          <Text style={styles.secondaryButtonText}>Download Offline Map</Text>
+        <TouchableOpacity style={[styles.btn, styles.secondaryBtn]}>
+          <Text style={[styles.btnText, { color: "#334155" }]}>Download Offline Map</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -49,52 +49,12 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 12,
   },
-  titleContainer: {
-    flex: 1,
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0f172a",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#64748b",
-    marginTop: 2,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  closeText: {
-    fontSize: 18,
-    color: "#64748b",
-    fontWeight: "bold",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  primaryButton: {
-    backgroundColor: "#2563eb",
-  },
-  primaryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  secondaryButton: {
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-  },
-  secondaryButtonText: {
-    color: "#334155",
-    fontWeight: "600",
-  },
+  title: { fontSize: 18, fontWeight: "bold", color: "#0f172a" },
+  subtitle: { fontSize: 14, color: "#64748b", marginTop: 2 },
+  closeText: { fontSize: 18, color: "#64748b", fontWeight: "bold" },
+  row: { flexDirection: "row", gap: 8 },
+  btn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
+  btnText: { fontWeight: "600" },
+  primaryBtn: { backgroundColor: "#2563eb" },
+  secondaryBtn: { backgroundColor: "#f1f5f9", borderWidth: 1, borderColor: "#cbd5e1" },
 });

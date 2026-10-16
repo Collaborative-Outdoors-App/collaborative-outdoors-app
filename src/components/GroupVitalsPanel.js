@@ -13,49 +13,46 @@ export default function GroupVitalsPanel({ onMinimize }) {
   const [members, setMembers] = useState(INITIAL_MEMBERS);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setMembers((prev) =>
-        prev.map((m) => {
-          const delta = Math.floor(Math.random() * 3) - 1;
-          const newBpm = Math.max(80, Math.min(150, m.bpm + delta));
-          return { ...m, bpm: newBpm };
-        })
+        prev.map((m) => ({
+          ...m,
+          bpm: Math.max(80, Math.min(150, m.bpm + Math.floor(Math.random() * 3) - 1)),
+        }))
       );
     }, 3000);
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, []);
 
   return (
     <View style={styles.panel}>
       <View style={styles.header}>
-        <View style={styles.headerTextContainer}>
+        <View style={{ flex: 1, marginRight: 8 }}>
           <Text style={styles.statusDot}>
             ● <Text style={styles.statusText}>Live Vitals</Text>
           </Text>
           <Text style={styles.panelTitle}>Group Members ({members.length})</Text>
         </View>
-        <TouchableOpacity style={styles.toggleButton} onPress={onMinimize}>
+        <TouchableOpacity style={styles.toggleBtn} onPress={onMinimize}>
           <Text style={styles.toggleText}>▼ Minimize</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
         style={styles.list}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ gap: 8 }}
         showsVerticalScrollIndicator={false}
       >
-        {members.map((member) => (
-          <View key={member.id} style={styles.card}>
-            <View style={styles.leftSection}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{member.code}</Text>
-              </View>
-              <View style={styles.memberInfo}>
-                <Text style={styles.memberName}>{member.name}</Text>
-                <Text style={styles.heartRate}>Heart rate {member.bpm} bpm</Text>
-              </View>
+        {members.map((m) => (
+          <View key={m.id} style={styles.card}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{m.code}</Text>
             </View>
-            <Text style={styles.condition}>{member.condition}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{m.name}</Text>
+              <Text style={styles.bpm}>Heart rate {m.bpm} bpm</Text>
+            </View>
+            <Text style={styles.condition}>{m.condition}</Text>
           </View>
         ))}
       </ScrollView>
@@ -72,8 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    padding: 16,
     paddingBottom: 20,
     elevation: 8,
     shadowColor: "#000",
@@ -87,60 +83,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  headerTextContainer: {
-    flex: 1,
-    marginRight: 8,
-  },
-  statusDot: {
-    color: "#16a34a",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  statusText: {
-    color: "#16a34a",
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  panelTitle: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#0f172a",
-    marginTop: 2,
-  },
-  toggleButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: "#f1f5f9",
-    borderRadius: 6,
-  },
-  toggleText: {
-    fontSize: 12,
-    color: "#475569",
-    fontWeight: "600",
-  },
-  list: {
-    maxHeight: 210,
-  },
-  listContent: {
-    gap: 8,
-    paddingBottom: 4,
-  },
+  statusDot: { color: "#16a34a", fontSize: 12, fontWeight: "bold" },
+  statusText: { color: "#16a34a", fontSize: 12, fontWeight: "600", textTransform: "uppercase" },
+  panelTitle: { fontSize: 17, fontWeight: "bold", color: "#0f172a", marginTop: 2 },
+  toggleBtn: { paddingVertical: 6, paddingHorizontal: 10, backgroundColor: "#f1f5f9", borderRadius: 6 },
+  toggleText: { fontSize: 12, color: "#475569", fontWeight: "600" },
+  list: { maxHeight: 210 },
   card: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#e2e8f0",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  leftSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
   },
   avatar: {
     width: 46,
@@ -151,28 +108,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 14,
   },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1E3F30",
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  heartRate: {
-    fontSize: 14,
-    color: "#64748b",
-    marginTop: 2,
-  },
-  condition: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#1E3F30",
-    marginLeft: 12,
-  },
+  avatarText: { fontSize: 16, fontWeight: "700", color: "#1E3F30" },
+  name: { fontSize: 16, fontWeight: "700", color: "#0f172a" },
+  bpm: { fontSize: 14, color: "#64748b", marginTop: 2 },
+  condition: { fontSize: 15, fontWeight: "600", color: "#1E3F30", marginLeft: 12 },
 });

@@ -9,49 +9,38 @@ export default function HikeActivityPanel({ trail, onEndHike, onMinimize }) {
     return () => clearInterval(timer);
   }, []);
 
-  const formatTime = (totalSeconds) => {
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
+  const timeStr = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
-  const distanceKm = 0;
+  const stats = [
+    { label: "Time Elapsed", value: timeStr },
+    { label: "Distance", value: "0.00 km" },
+    { label: "Trail Length", value: trail?.lengthKm ? `${trail.lengthKm} km` : "--" },
+  ];
 
   return (
     <View style={styles.panel}>
       <View style={styles.header}>
-        <View style={styles.headerTextContainer}>
+        <View style={{ flex: 1, marginRight: 8 }}>
           <Text style={styles.statusDot}>● <Text style={styles.statusText}>Hike Active</Text></Text>
           <Text style={styles.trailName} numberOfLines={1}>{trail?.name || "Active Trail"}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={onMinimize}
-        >
+        <TouchableOpacity style={styles.toggleBtn} onPress={onMinimize}>
           <Text style={styles.toggleText}>▼ Minimize</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.body}>
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Time Elapsed</Text>
-              <Text style={styles.statValue}>{formatTime(seconds)}</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Distance</Text>
-              <Text style={styles.statValue}>{distanceKm.toFixed(2)} km</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Trail Length</Text>
-              <Text style={styles.statValue}>{trail?.lengthKm ? `${trail.lengthKm} km` : "--"}</Text>
-            </View>
+      <View style={styles.statsRow}>
+        {stats.map(({ label, value }) => (
+          <View key={label} style={styles.statBox}>
+            <Text style={styles.statLabel}>{label}</Text>
+            <Text style={styles.statValue}>{value}</Text>
           </View>
+        ))}
+      </View>
 
-          <TouchableOpacity style={styles.endButton} onPress={onEndHike}>
-            <Text style={styles.endButtonText}>End Hike</Text>
-          </TouchableOpacity>
-        </View>
+      <TouchableOpacity style={styles.endBtn} onPress={onEndHike}>
+        <Text style={styles.endBtnText}>End Hike</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -72,61 +61,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTextContainer: {
-    flex: 1,
-    marginRight: 8,
-  },
-  statusDot: {
-    color: "#16a34a",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  statusText: {
-    color: "#16a34a",
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  trailName: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#0f172a",
-    marginTop: 2,
-  },
-  toggleButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: "#f1f5f9",
-    borderRadius: 6,
-  },
-  toggleText: {
-    fontSize: 12,
-    color: "#475569",
-    fontWeight: "600",
-  },
-  collapsedRow: {
-    flexDirection: "row",
-    gap: 20,
-    marginTop: 8,
-  },
-  collapsedStat: {
-    fontSize: 14,
-    color: "#334155",
-    fontWeight: "600",
-  },
-  body: {
-    marginTop: 14,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 14,
-  },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  statusDot: { color: "#16a34a", fontSize: 12, fontWeight: "bold" },
+  statusText: { color: "#16a34a", fontSize: 12, fontWeight: "600", textTransform: "uppercase" },
+  trailName: { fontSize: 17, fontWeight: "bold", color: "#0f172a", marginTop: 2 },
+  toggleBtn: { paddingVertical: 6, paddingHorizontal: 10, backgroundColor: "#f1f5f9", borderRadius: 6 },
+  toggleText: { fontSize: 12, color: "#475569", fontWeight: "600" },
+  statsRow: { flexDirection: "row", gap: 8, marginVertical: 14 },
   statBox: {
     flex: 1,
     backgroundColor: "#f8fafc",
@@ -135,25 +76,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  statLabel: {
-    fontSize: 11,
-    color: "#64748b",
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#0f172a",
-  },
-  endButton: {
-    backgroundColor: "#ef4444",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  endButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
+  statLabel: { fontSize: 11, color: "#64748b", marginBottom: 4 },
+  statValue: { fontSize: 16, fontWeight: "bold", color: "#0f172a" },
+  endBtn: { backgroundColor: "#ef4444", paddingVertical: 12, borderRadius: 8, alignItems: "center" },
+  endBtnText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
 });
