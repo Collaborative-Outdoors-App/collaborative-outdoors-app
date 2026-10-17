@@ -15,10 +15,19 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.tapa991.CollaborativeOutdoorsApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@maplibre/maplibre-react-native"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a0d7fffd-ddca-4bd1-9fbc-0bbea985ecab"
+      }
     }
   }
 }
