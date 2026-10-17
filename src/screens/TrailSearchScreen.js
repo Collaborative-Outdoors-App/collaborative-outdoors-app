@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, View, Keyboard, TouchableOpacity, Text } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import {
   Map,
   Camera,
@@ -18,6 +19,7 @@ import DistanceFilter from "../components/DistanceFilter";
 import HikeActivityPanel from "../components/HikeActivityPanel";
 import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
+import HikeSummaryPopup from "../components/HikeSummaryPopup";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
 const MAP_STYLE_URL = `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`;
@@ -50,11 +52,13 @@ const HIKE_PANEL_BTNS = [
 ];
 
 export default function TrailSearchScreen() {
+  const navigation = useNavigation();
   const [selectedTrailId, setSelectedTrailId] = useState(null);
   const [distanceFilter, setDistanceFilter] = useState(null);
   const [hikeActive, setHikeActive] = useState(false);
   const [activeHikePanel, setActiveHikePanel] = useState(null);
   const [hikeSeconds, setHikeSeconds] = useState(0);
+  const [showSummary, setShowSummary] = useState(false);
   const cameraRef = useRef(null);
   const currentPosition = useCurrentPosition();
 
@@ -64,18 +68,25 @@ export default function TrailSearchScreen() {
     });
   }, []);
 
+  // Timer pauses while the summary popup is showing
   useEffect(() => {
-    if (!hikeActive) return;
+    if (!hikeActive || showSummary) return;
     const timer = setInterval(() => setHikeSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
-  }, [hikeActive]);
+  }, [hikeActive, showSummary]);
 
-  const endHike = useCallback(() => {
+  // Called when "End Hike" is pressed: show the summary, keep state intact
+  const handleEndHike = useCallback(() => setShowSummary(true), []);
+
+  // Called from the popup: reset everything and go home
+  const handleReturnHome = useCallback(() => {
+    setShowSummary(false);
     setHikeActive(false);
     setSelectedTrailId(null);
     setActiveHikePanel(null);
     setHikeSeconds(0);
-  }, []);
+    navigation.navigate("Home");
+  }, [navigation]);
 
   const handleZoomToUserLocation = async () => {
     let coords = currentPosition?.coords || (await LocationManager.getCurrentPosition())?.coords;
@@ -195,7 +206,7 @@ export default function TrailSearchScreen() {
             <HikeActivityPanel
               trail={selectedTrail}
               seconds={hikeSeconds}
-              onEndHike={endHike}
+              onEndHike={handleEndHike}
               onMinimize={() => setActiveHikePanel(null)}
             />
           )}
@@ -214,6 +225,14 @@ export default function TrailSearchScreen() {
           }}
         />
       )}
+
+      <HikeSummaryPopup
+        visible={showSummary}
+        trail={selectedTrail}
+        seconds={hikeSeconds}
+        distanceKm={0}
+        onReturnHome={handleReturnHome}
+      />
     </View>
   );
 }

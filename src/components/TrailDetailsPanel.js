@@ -55,6 +55,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 8 },
   btn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
   btnText: { fontWeight: "600" },
-  primaryBtn: { backgroundColor: "#2563eb" },
-  secondaryBtn: { backgroundColor: "#f1f5f9", borderWidth: 1, borderColor: "#cbd5e1" },
+  primaryBtn: { backgroundColor: "#2F5D46" },
+  secondaryBtn: { backgroundColor: "#f1f5f9ff", borderWidth: 1, borderColor: "#cbd5e1" },
 });
