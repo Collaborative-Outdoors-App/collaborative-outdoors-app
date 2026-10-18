@@ -18,6 +18,28 @@ export const CURRENT_USER = {
       { "id": "hike_50km", "unlockDate": "2026-02-18" },
       { "id": "hike_100km", "unlockDate": "2026-07-18" },
       { "id": "hike_250km", "unlockDate": "2026-10-18" }
+    ],
+    "personalRecords": [
+      {
+        "id": "most_hikes_week",
+        "value": 7,
+        "setOn": "2026-01-11"
+      },
+      {
+        "id": "most_hikes_month",
+        "value": 20,
+        "setOn": "2026-01-31"
+      },
+      {
+        "id": "longest_distance",
+        "value": 32,
+        "setOn": "2025-10-12"
+      },
+      {
+        "id": "longest_duration",
+        "value": 225,
+        "setOn": "2025-10-12"
+      },
     ]
   }
 }
@@ -96,4 +118,27 @@ export const ACHIEVEMENT_DATA = [
   { id: 'hike_250km', name: 'Distance Achievement 5', description: 'Hike 250km', requirement: 250 },
   { id: 'hike_500km', name: 'Distance Achievement 6', description: 'Hike 500km', requirement: 500 },
   { id: 'hike_1000km', name: 'Distance Achievement 7', description: 'Hike 1000km', requirement: 1000 },
+];
+
+export const PERSONAL_RECORDS = [
+  {
+    id: 'most_hikes_week',
+    name: 'Most hikes in a week',
+    unit: 'hikes',
+  },
+  {
+    id: 'most_hikes_month',
+    name: 'Most hikes in a month',
+    unit: 'hikes',
+  },
+  {
+    id: 'longest_distance',
+    name: 'Longest distance travelled',
+    unit: 'km',
+  },
+  {
+    id: 'longest_duration',
+    name: 'Longest hike duration',
+    unit: 'minutes',
+  }
 ];
