@@ -13,3 +13,36 @@ export const CURRENT_USER = {
     "groupIds": ["g1", "g2"]
   }
 }
+
+export const DISTANCE_TRAVELLED_TRENDS = [
+  { km: 8.4 },
+  { km: 6.1 },
+  { km: 0 },
+  { km: 3.2 },
+  { km: 0 },
+  { km: 4.5 },
+  { km: 0 },
+  { km: 12.3 },
+  { km: 9.7 },
+  { km: 0 },
+  { km: 2.8 },
+  { km: 0 },
+  { km: 5.0 },
+  { km: 0 },
+  { km: 14.2 },
+  { km: 7.9 },
+  { km: 0 },
+  { km: 3.6 },
+  { km: 0 },
+  { km: 4.8 },
+  { km: 0 },
+  { km: 15.8 },
+  { km: 10.4 },
+  { km: 6.5 },
+  { km: 0 },
+  { km: 3.9 },
+  { km: 0 },
+  { km: 5.4 },
+  { km: 16.7 },
+  { km: 11.2 },
+];
