@@ -13,6 +13,8 @@ import TrailSearchScreen from './src/screens/TrailSearchScreen';
 import AccountDetails from './src/screens/AccountDetails';
 import Achievements from './src/screens/Achievements';
 import ActivityTrends from './src/screens/ActivityTrends';
+import TwoStepSetup from './src/screens/TwoStepSetup';
+import TwoStepVerification from './src/screens/TwoStepVerification';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +33,8 @@ export default function App() {
           <Stack.Screen name="AccountDetails" component={AccountDetails} />
           <Stack.Screen name="Achievements" component={Achievements} />
           <Stack.Screen name="ActivityTrends" component={ActivityTrends} />
+          <Stack.Screen name="TwoStepSetup" component={TwoStepSetup} />
+          <Stack.Screen name="TwoStepVerification" component={TwoStepVerification} />
         </Stack.Navigator>
       </NavigationContainer>
     </>
