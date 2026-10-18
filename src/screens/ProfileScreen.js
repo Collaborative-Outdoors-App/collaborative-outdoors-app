@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import Button from '../components/Button';
 import { CURRENT_USER } from '../constants/currentUser';
 
 const GREEN = '#2F5D46';
+const RED = '#B91C1C';
 
 function getAge(dateOfBirth) {
   const dob = new Date(dateOfBirth);
@@ -26,6 +27,23 @@ function Stat({ label, value }) {
 export default function ProfileScreen({ navigation }) {
   const user = CURRENT_USER.currentUser;
   const initials = `${user.firstName[0]}${user.lastName[0]}`;
+
+  const handleLogout = () => {
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: () => {
+          // TODO: clear auth state / tokens here
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        },
+      },
+    ]);
+  };
 
   return (
     <ScrollView
@@ -74,6 +92,13 @@ export default function ProfileScreen({ navigation }) {
           onPress={() => navigation.navigate('PersonalRecords')}
         />
       </View>
+
+      {/* Logout */}
+      <Button
+        title="Log Out"
+        onPress={handleLogout}
+        style={styles.logoutButton}
+      />
     </ScrollView>
   );
 }
@@ -157,4 +182,7 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: '#E5E7EB',
   },
+  logoutButton: {
+    backgroundColor: '#B5402F',
+  }
 });
