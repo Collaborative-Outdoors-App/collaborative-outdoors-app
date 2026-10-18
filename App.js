@@ -16,16 +16,6 @@ import ActivityTrends from './src/screens/ActivityTrends';
 import TwoStepSetup from './src/screens/TwoStepSetup';
 import TwoStepVerification from './src/screens/TwoStepVerification';
 import AppHeader from "./src/components/AppHeader";
-
-import LoginScreen from "./src/screens/LoginScreen";
-import SignupScreen from "./src/screens/SignupScreen";
-import HomeScreen from "./src/screens/HomeScreen";
-import ProfileScreen from "./src/screens/ProfileScreen";
-import GroupsScreen from "./src/screens/GroupsScreen";
-import TrailSearchScreen from "./src/screens/TrailSearchScreen";
-import AccountDetails from "./src/screens/AccountDetails";
-import Achievements from "./src/screens/Achievements";
-import ActivityTrends from "./src/screens/ActivityTrends";
 import PersonalRecords from "./src/screens/PersonalRecords";
 
 const Stack = createNativeStackNavigator();
