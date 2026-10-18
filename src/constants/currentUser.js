@@ -1,9 +1,9 @@
-{
+export const CURRENT_USER = {
   "currentUser": {
     "userId": "u1",
-    "firstName": "Bob",
+    "firstName": "Rob",
     "lastName": "Smith",
-    "email": "bob.smith@example.com",
+    "email": "rob.smith@example.com",
     "dateOfBirth": "1990-05-17",
     "weightKg": 82,
     "emergencyContacts": [
