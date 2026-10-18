@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
   primary: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: '#2F5D46',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -47,12 +47,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   secondary: {
-    backgroundColor: '#e0e7ff',
+    backgroundColor: '#FFFFFF',
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#4f46e5',
+    borderColor: '#2F5D46',
   },
   pressed: {
     opacity: 0.85,
@@ -67,6 +67,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   primaryText: { color: '#fff' },
-  secondaryText: { color: '#4f46e5' },
-  outlineText: { color: '#4f46e5' },
+  secondaryText: { color: '#2F5D46' },
+  outlineText: { color: '#2F5D46' },
 });
