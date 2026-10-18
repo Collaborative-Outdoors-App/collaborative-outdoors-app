@@ -10,7 +10,15 @@ export const CURRENT_USER = {
       { "contactId": "ec1", "firstName": "Carol", "lastName": "Smith", "phoneNumber": "123-555-0142" },
       { "contactId": "ec2", "firstName": "Dave", "lastName": "Smith", "phoneNumber": "123-555-0187" }
     ],
-    "groupIds": ["g1", "g2"]
+    "groupIds": ["g1", "g2"],
+    "totalDistance": 276.4,
+    "achievements": [
+      { "id": "hike_10km", "unlockDate": "2025-10-18" },
+      { "id": "hike_25km", "unlockDate": "2025-12-18" },
+      { "id": "hike_50km", "unlockDate": "2026-02-18" },
+      { "id": "hike_100km", "unlockDate": "2026-07-18" },
+      { "id": "hike_250km", "unlockDate": "2026-10-18" }
+    ]
   }
 }
 
@@ -78,4 +86,14 @@ export const TIME_SPENT_HIKING_TRENDS = [
   { minutes: 65 },
   { minutes: 225 },
   { minutes: 146 },
+];
+
+export const ACHIEVEMENT_DATA = [
+  { id: 'hike_10km', name: 'Distance Achievement 1', description: 'Hike 10km', requirement: 10 },
+  { id: 'hike_25km', name: 'Distance Achievement 2', description: 'Hike 25km', requirement: 25 },
+  { id: 'hike_50km', name: 'Distance Achievement 3', description: 'Hike 50km', requirement: 50 },
+  { id: 'hike_100km', name: 'Distance Achievement 4', description: 'Hike 100km', requirement: 100 },
+  { id: 'hike_250km', name: 'Distance Achievement 5', description: 'Hike 250km', requirement: 250 },
+  { id: 'hike_500km', name: 'Distance Achievement 6', description: 'Hike 500km', requirement: 500 },
+  { id: 'hike_1000km', name: 'Distance Achievement 7', description: 'Hike 1000km', requirement: 1000 },
 ];
