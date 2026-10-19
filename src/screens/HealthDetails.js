@@ -59,7 +59,7 @@ export default function HealthDetails({ navigation, route }) {
         </View>
       )}
 
-      <AuthenticationButtons title="Back to group health" variant="secondary" onPress={() => navigation.navigate('GroupHealth')} />
+      <AuthenticationButtons title="Dismiss" variant="secondary" onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Home' }] })}/>
     </ScrollView>
   );
 }

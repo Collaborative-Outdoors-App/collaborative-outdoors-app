@@ -103,11 +103,8 @@ export default function ConnectWearableScreen({ navigation }) {
        <Pressable onPress={() => navigation.navigate('OverexertionAlert')}>
         <Text style={common.demoText}>Demo: show health alert</Text>
       </Pressable>
-      <Pressable onPress={() => navigation.navigate('MemberHealthScreen`')}>
+      <Pressable onPress={() => navigation.navigate('HealthDetails', { member: currentUserData.currentUser })}>
         <Text style={common.demoText}>Demo: show member health</Text>
-      </Pressable>
-      <Pressable onPress={() => navigation.navigate('EmergencyNotified')}>
-        <Text style={common.demoText}>Demo: show emergency contact notified</Text>
       </Pressable>
     </ScrollView>
   );
