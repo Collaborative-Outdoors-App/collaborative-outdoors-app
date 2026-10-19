@@ -11,6 +11,7 @@ import SignupScreen from "./src/screens/SignupScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import GroupsScreen from "./src/screens/GroupsScreen";
+import GroupChatScreen from "./src/screens/GroupChatScreen";
 import TrailSearchScreen from "./src/screens/TrailSearchScreen";
 import AccountDetails from "./src/screens/AccountDetails";
 import Achievements from "./src/screens/Achievements";
@@ -34,6 +35,7 @@ export default function App() {
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Groups" component={GroupsScreen} />
+          <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
           <Stack.Screen name="TrailSearch" component={TrailSearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AccountDetails" component={AccountDetails} />
           <Stack.Screen name="Achievements" component={Achievements} />
