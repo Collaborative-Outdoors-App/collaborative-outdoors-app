@@ -18,6 +18,7 @@ import TwoStepVerification from './src/screens/TwoStepVerification';
 import AppHeader from "./src/components/AppHeader";
 import PersonalRecords from "./src/screens/PersonalRecords";
 import PersonalDetails from "./src/screens/PersonalDetails";
+import ChangePasswordScreen from "./src/screens/ChangePassword";
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +45,7 @@ export default function App() {
           <Stack.Screen name="TwoStepVerification" component={TwoStepVerification} />
           <Stack.Screen name="PersonalRecords" component={PersonalRecords} />
           <Stack.Screen name="PersonalDetails" component={PersonalDetails} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </>
