@@ -21,6 +21,7 @@ import PersonalDetails from "./src/screens/PersonalDetails";
 import ChangePasswordScreen from "./src/screens/ChangePassword";
 import WearableSetup from "./src/screens/WearableSetup";
 import MFASetup from "./src/screens/MFA-Setup";
+import HealthDetailsScreen from "./src/screens/HealthDetails";
 
 const Stack = createNativeStackNavigator();
 
@@ -50,6 +51,7 @@ export default function App() {
           <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           <Stack.Screen name="ConnectWearable" component={WearableSetup} />
           <Stack.Screen name="MFASetup" component={MFASetup} />
+          <Stack.Screen name="HealthDetails" component={HealthDetailsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </>

@@ -4,7 +4,8 @@ import AuthenticationButtons from '../components/AuthenticationButtons';
 import Banner from '../components/MessageBanner';
 import TextField from '../components/InputTexts';
 import { common } from '../styles/theme';
-import { twoStepEnabled } from '../constants/currentUser.json';
+import { twoStepEnabled } from '../constants/currentUser';
+
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

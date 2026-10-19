@@ -2,6 +2,7 @@ import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import Button from '../components/Button';
 import { CURRENT_USER } from '../constants/currentUser';
 
+
 const GREEN = '#2F5D46';
 const RED = '#B91C1C';
 

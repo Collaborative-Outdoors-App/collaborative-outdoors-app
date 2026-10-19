@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import AuthenticationButtons from '../components/AuthenticationButtons';
 import { colors, common } from '../styles/theme';
-import currentUserData from '../constants/currentUser.json';
+import { CURRENT_USER as currentUserData } from '../constants/currentUser';
 
 const wearable = currentUserData.currentUser.wearableDevice;
 
@@ -99,6 +99,15 @@ export default function ConnectWearableScreen({ navigation }) {
 
       <Pressable onPress={() => setStatus('lost')}>
         <Text style={styles.demo}>Demo: show lost connection</Text>
+      </Pressable>
+       <Pressable onPress={() => navigation.navigate('OverexertionAlert')}>
+        <Text style={common.demoText}>Demo: show health alert</Text>
+      </Pressable>
+      <Pressable onPress={() => navigation.navigate('MemberHealthScreen`')}>
+        <Text style={common.demoText}>Demo: show member health</Text>
+      </Pressable>
+      <Pressable onPress={() => navigation.navigate('EmergencyNotified')}>
+        <Text style={common.demoText}>Demo: show emergency contact notified</Text>
       </Pressable>
     </ScrollView>
   );

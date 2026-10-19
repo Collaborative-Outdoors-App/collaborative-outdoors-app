@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, common } from '../styles/theme';
-import currentUserData from '../constants/currentUser.json';
+import { CURRENT_USER as currentUserData } from '../constants/currentUser';
 
 const currentUser = currentUserData.currentUser;
 

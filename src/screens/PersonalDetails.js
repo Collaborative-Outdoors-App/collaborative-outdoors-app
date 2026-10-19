@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, 
 import AuthenticationButtons from '../components/AuthenticationButtons';
 import TextField from '../components/InputTexts';
 import { colors, common } from '../styles/theme';
-import currentUserData from '../constants/currentUser.json';
+import { CURRENT_USER as currentUserData } from '../constants/currentUser';
 
 const currentUser = currentUserData.currentUser;
 const contact = currentUser.emergencyContacts[0];
@@ -17,7 +17,6 @@ function ToggleRow({ label, value, onValueChange, last }) {
   );
 }
 
-// MOCK: edits are kept in state only and are not saved anywhere.
 export default function AccountDetails({ navigation }) {
   const [fullName, setFullName] = useState(`${currentUser.firstName} ${currentUser.lastName}`);
   const [contactName, setContactName] = useState(`${contact.firstName} ${contact.lastName}`);

@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import AuthenticationButtons from '../components/AuthenticationButtons';
 import NavBar from '../components/NavBar';
 import { colors, common } from '../styles/theme';
-import currentUserData from '../constants/currentUser.json';
+import { CURRENT_USER as currentUserData } from '../constants/currentUser';
 
 const currentUser = currentUserData.currentUser;
 

@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Button from '../components/Button';
 import { CURRENT_USER } from '../constants/currentUser';
-import NavBar from '../components/NavBar';
 
 const GREEN = '#2F5D46';
 

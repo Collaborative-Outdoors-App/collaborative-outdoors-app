@@ -29,9 +29,11 @@ export const GROUPS = {
       "name": "Weekend Warriors",
       "createdDate": "2026-06-02",
       "members": [
-        { "userId": "u6", "firstName": "Maya", "lastName": "Smith", "email": "maya.smith@example.com", "role": "owner", "dateJoined": "2026-06-02" },
-        { "userId": "u1", "firstName": "Rob", "lastName": "Smith", "email": "rob.smith@example.com", "role": "member", "dateJoined": "2026-06-05" },
-        { "userId": "u7", "firstName": "Omar", "lastName": "Smith", "email": "omar.smith@example.com", "role": "member", "dateJoined": "2026-07-21" }
+        { "userId": "u6", "firstName": "Maya", "lastName": "Smith", "email": "maya.smith@example.com", "role": "owner", "dateJoined": "2026-06-02", "heartRate": 168, "percentOfMax": 91, "status": "elevated",
+          "emergencyContacts": [{ "contactId": "ec3", "firstName": "Mark", "lastName": "Smith", "phoneNumber": "123-555-0111"  }],
+        },
+        { "userId": "u1", "firstName": "Rob", "lastName": "Smith", "email": "rob.smith@example.com", "role": "member", "dateJoined": "2026-06-05",  "emergencyContacts": [{ "contactId": "ec4", "firstName": "Mia", "lastName": "Smith", "phoneNumber": "123-555-0122" }]  },
+        { "userId": "u7", "firstName": "Omar", "lastName": "Smith", "email": "omar.smith@example.com", "role": "member", "dateJoined": "2026-07-21", "emergencyContacts": [{ "contactId": "ec5", "firstName": "Lena", "lastName": "Smith", "phoneNumber": "123-555-0133" }] }
       ],
       "invitations": [
         { "invitationId": "i3", "inviteeEmail": "chris.lee@example.com", "status": "declined", "sentDate": "2026-09-10", "sentBy": "u6" }

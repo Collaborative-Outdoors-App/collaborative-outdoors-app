@@ -12,6 +12,9 @@ export const CURRENT_USER = {
     ],
     "groupIds": ["g1", "g2"],
     "totalDistance": 276.4,
+    "twoStepEnabled": true,
+    "wearableDevice": { "name": "Fitbit Charge 6", "provider": "Google Fit", "heartRate": 112 },
+    "mfa": { "phoneNumber": "289-555-3222", "authenticatorKey": "xbcs-dssc-fzccs-dfsz" },
     "achievements": [
       { "id": "hike_10km", "unlockDate": "2025-10-18" },
       { "id": "hike_25km", "unlockDate": "2025-12-18" },
