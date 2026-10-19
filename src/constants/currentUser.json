@@ -12,6 +12,7 @@
     ],
     "groupIds": ["g1", "g2"],
     "twoStepEnabled": true,
+    "mfa": { "phoneNumber": "289-555-3222", "authenticatorKey": "xbcs-dssc-fzccs-dfsz" },
     "wearableDevice": { "name": "Trail Band 2", "provider": "Google Fit", "battery": "82%" }
   }
 }
