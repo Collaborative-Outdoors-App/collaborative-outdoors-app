@@ -37,6 +37,7 @@ export default function LoginScreen({ navigation, route }) {
     <KeyboardAvoidingView style={common.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={common.content} keyboardShouldPersistTaps="handled">
         <Text style={common.title}>Welcome back</Text>
+        
 
         {route?.params?.expired ? (
           <Banner type="warning" title="Session expired" text="For your security, please log in again." />
