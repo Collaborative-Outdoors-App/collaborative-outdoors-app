@@ -59,7 +59,6 @@ export default function AccountDetails({ navigation }) {
 
         <View style={[common.card, styles.group]}>
           <ToggleRow label="Enable Push Notifications" value={pushEnabled} onValueChange={setPushEnabled} />
-          <ToggleRow label="Share Heart Rate With Group" value={shareHeartRate} onValueChange={setShareHeartRate} last />
         </View>
 
         <AuthenticationButtons title="Save Changes" onPress={handleSave} />

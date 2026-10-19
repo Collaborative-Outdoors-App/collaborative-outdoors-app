@@ -39,12 +39,6 @@ export default function ProfileScreen({ navigation }) {
           <Row label="Wearable" onPress={() => navigation.navigate('ConnectWearable')} />
           <Row label="Two-Step Verification" onPress={() => navigation.navigate('MFASetup')} last />
         </View>
-
-        <AuthenticationButtons
-          title="Log Out"
-          variant="secondary"
-          onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] })}
-        />
       </ScrollView>
     </View>
   );
