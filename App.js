@@ -1,29 +1,28 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet } from "react-native";
-
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import LoginScreen from './src/screens/LoginScreen';
-import SignupScreen from './src/screens/SignupScreen';
-import HomeScreen from './src/screens/HomeScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
-import GroupScreen from './src/screens/GroupScreen';
-import TrailSearchScreen from './src/screens/TrailSearchScreen';
-import AccountDetails from './src/screens/AccountDetails';
-import Achievements from './src/screens/Achievements';
-import ActivityTrends from './src/screens/ActivityTrends';
-import TwoStepSetup from './src/screens/TwoStepSetup';
-import TwoStepVerification from './src/screens/TwoStepVerification';
 import AppHeader from "./src/components/AppHeader";
-import PersonalRecords from "./src/screens/PersonalRecords";
-import PersonalDetails from "./src/screens/PersonalDetails";
+import GroupScreen from "./src/screens/GroupScreen";
+import AccountDetails from "./src/screens/AccountDetails";
+import Achievements from "./src/screens/Achievements";
+import ActivityTrends from "./src/screens/ActivityTrends";
 import ChangePasswordScreen from "./src/screens/ChangePassword";
-import WearableSetup from "./src/screens/WearableSetup";
-import MFASetup from "./src/screens/MFA-Setup";
-import HealthDetailsScreen from "./src/screens/HealthDetails";
-import OverexertionAlertScreen from "./src/screens/OverexertionAlert";
 import EmergencyNotifiedScreen from "./src/screens/EmergencyNotifiedScreen";
+import GroupChatScreen from "./src/screens/GroupChatScreen";
+import HealthDetailsScreen from "./src/screens/HealthDetails";
+import HomeScreen from "./src/screens/HomeScreen";
+import LoginScreen from "./src/screens/LoginScreen";
+import MFASetup from "./src/screens/MFA-Setup";
+import OverexertionAlertScreen from "./src/screens/OverexertionAlert";
+import PersonalDetails from "./src/screens/PersonalDetails";
+import PersonalRecords from "./src/screens/PersonalRecords";
+import ProfileScreen from "./src/screens/ProfileScreen";
+import SignupScreen from "./src/screens/SignupScreen";
+import TrailSearchScreen from "./src/screens/TrailSearchScreen";
+import TwoStepSetup from "./src/screens/TwoStepSetup";
+import TwoStepVerification from "./src/screens/TwoStepVerification";
+import WearableSetup from "./src/screens/WearableSetup";
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +41,7 @@ export default function App() {
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Groups" component={GroupScreen} />
+          <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
           <Stack.Screen name="TrailSearch" component={TrailSearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AccountDetails" component={AccountDetails} />
           <Stack.Screen name="Achievements" component={Achievements} />
