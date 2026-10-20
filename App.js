@@ -1,10 +1,9 @@
 import { StatusBar } from "expo-status-bar";
-
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import AppHeader from "./src/components/AppHeader";
-import GroupScreen from './src/screens/GroupScreen';
+import GroupScreen from "./src/screens/GroupScreen";
 import AccountDetails from "./src/screens/AccountDetails";
 import Achievements from "./src/screens/Achievements";
 import ActivityTrends from "./src/screens/ActivityTrends";
