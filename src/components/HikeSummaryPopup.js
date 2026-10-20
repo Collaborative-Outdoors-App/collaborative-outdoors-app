@@ -14,12 +14,17 @@ export default function HikeSummaryPopup({
   trail,
   seconds = 0,
   distanceKm = 0, // placeholder until distance tracking exists
+  caloriesBurned = 320, // placeholder static value
   onReturnHome,
 }) {
   const stats = [
     { label: "Time Elapsed", value: formatTime(seconds) },
     { label: "Distance Travelled", value: `${distanceKm.toFixed(2)} km` },
     { label: "Trail Length", value: trail?.lengthKm ? `${trail.lengthKm} km` : "--" },
+    {
+      label: "Calories Burned",
+      value: typeof caloriesBurned === "number" ? `${caloriesBurned} kcal` : caloriesBurned,
+    },
   ];
 
   return (

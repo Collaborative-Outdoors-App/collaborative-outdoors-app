@@ -25,7 +25,7 @@ function getInitials(name) {
     .join("");
 }
 
-export default function GroupsScreen({ navigation }) {
+export default function GroupScreen({ navigation }) {
   const [groups, setGroups] = useState(GROUPS.groups);
   const [activeTab, setActiveTab] = useState("groups");
   const [selectedGroupId, setSelectedGroupId] = useState(GROUPS.groups[0]?.groupId || null);
