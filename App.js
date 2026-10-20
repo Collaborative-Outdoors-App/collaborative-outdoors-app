@@ -42,6 +42,7 @@ export default function App() {
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Groups" component={GroupScreen} />
+          <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
           <Stack.Screen name="TrailSearch" component={TrailSearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AccountDetails" component={AccountDetails} />
           <Stack.Screen name="Achievements" component={Achievements} />
