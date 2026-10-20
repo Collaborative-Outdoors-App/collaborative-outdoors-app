@@ -1,7 +1,34 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+
+const downloadedTrailIds = new Set();
 
 export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
+  const trailKey = trail?.trailId || trail?.id || trail?.name;
+  const isAlreadyDownloaded = Boolean(
+    (trailKey && downloadedTrailIds.has(trailKey)) || trail?.isDownloaded
+  );
+  const [isDownloaded, setIsDownloaded] = useState(() => isAlreadyDownloaded);
+
+  useEffect(() => {
+    setIsDownloaded(
+      Boolean((trailKey && downloadedTrailIds.has(trailKey)) || trail?.isDownloaded)
+    );
+  }, [trailKey, trail?.isDownloaded]);
+
   if (!trail) return null;
+
+  const handleOfflineMapPress = () => {
+    if (isDownloaded) {
+      Alert.alert("Update completed");
+    } else {
+      Alert.alert("Download completed");
+      if (trailKey) {
+        downloadedTrailIds.add(trailKey);
+      }
+      setIsDownloaded(true);
+    }
+  };
 
   return (
     <View style={styles.panel}>
@@ -19,8 +46,13 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
         <TouchableOpacity style={[styles.btn, styles.primaryBtn]} onPress={onStartHike}>
           <Text style={[styles.btnText, { color: "#fff" }]}>Start</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.btn, styles.secondaryBtn]}>
-          <Text style={[styles.btnText, { color: "#334155" }]}>Download Offline Map</Text>
+        <TouchableOpacity
+          style={[styles.btn, styles.secondaryBtn]}
+          onPress={handleOfflineMapPress}
+        >
+          <Text style={[styles.btnText, { color: "#334155" }]}>
+            {isDownloaded ? "Update Offline Map" : "Download Offline Map"}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
