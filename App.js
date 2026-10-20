@@ -10,7 +10,7 @@ import LoginScreen from "./src/screens/LoginScreen";
 import SignupScreen from "./src/screens/SignupScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
-import GroupsScreen from "./src/screens/GroupsScreen";
+import GroupScreen from "./src/screens/GroupsScreen";
 import GroupChatScreen from "./src/screens/GroupChatScreen";
 import TrailSearchScreen from "./src/screens/TrailSearchScreen";
 import AccountDetails from "./src/screens/AccountDetails";
