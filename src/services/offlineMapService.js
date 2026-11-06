@@ -1,17 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { OfflineManager } from "@maplibre/maplibre-react-native";
 
 export const STORAGE_KEY = "@outdoorz/offline_trail_maps";
 export const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
 export const MAP_STYLE_URL = `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`;
-
-// Safely load native MapLibre OfflineManager if available
-let MapLibreOffline = null;
-try {
-  const MapLibre = require("@maplibre/maplibre-react-native");
-  MapLibreOffline = MapLibre.OfflineManager || null;
-} catch (err) {
-  console.warn("[offlineMapService] MapLibre OfflineManager not available in this environment:", err);
-}
 
 /**
  * Computes a buffered [west, south, east, north] bounding box for downloading
@@ -108,21 +100,21 @@ export async function downloadTrailMap(trail, onProgress, onError) {
   const minZoom = 12;
   const maxZoom = 15;
 
-  if (MapLibreOffline) {
+  if (OfflineManager) {
     try {
-      if (typeof MapLibreOffline.setTileCountLimit === "function") {
-        MapLibreOffline.setTileCountLimit(20000);
+      if (typeof OfflineManager.setTileCountLimit === "function") {
+        OfflineManager.setTileCountLimit(20000);
       }
-      if (typeof MapLibreOffline.setProgressEventThrottle === "function") {
-        MapLibreOffline.setProgressEventThrottle(250);
+      if (typeof OfflineManager.setProgressEventThrottle === "function") {
+        OfflineManager.setProgressEventThrottle(250);
       }
 
       // If an existing pack exists for this trail, clean it up before creating new pack
       try {
-        const existingPacks = await MapLibreOffline.getPacks();
+        const existingPacks = await OfflineManager.getPacks();
         for (const p of existingPacks) {
           if (p.metadata?.trailId === trailId) {
-            await MapLibreOffline.deletePack(p.id);
+            await OfflineManager.deletePack(p.id);
           }
         }
       } catch (cleanErr) {
@@ -176,7 +168,7 @@ export async function downloadTrailMap(trail, onProgress, onError) {
           }
         };
 
-        MapLibreOffline.createPack(
+        OfflineManager.createPack(
           {
             mapStyle: MAP_STYLE_URL,
             bounds,
@@ -245,9 +237,9 @@ export async function deleteTrailMap(trailId) {
     const all = await getOfflineTrails();
     const record = all[idStr];
 
-    if (record?.packId && MapLibreOffline) {
+    if (record?.packId && OfflineManager) {
       try {
-        await MapLibreOffline.deletePack(record.packId);
+        await OfflineManager.deletePack(record.packId);
       } catch (err) {
         console.warn("[offlineMapService] Could not delete native pack:", err);
       }
@@ -261,4 +253,45 @@ export async function deleteTrailMap(trailId) {
     throw err;
   }
 }
+
+/**
+ * Clears MapLibre cache to facilitate testing offline maps.
+ * 
+ * @param {object} options
+ * @param {boolean} [options.resetAll=false] - If true, resets the entire database
+ *   (ambient cache + offline packs). If false, only clears the ambient cache
+ *   (temporary browsing tiles) while preserving explicitly downloaded offline packs.
+ */
+export async function clearMapCache({ resetAll = false } = {}) {
+  let clearedNative = false;
+
+  if (OfflineManager) {
+    try {
+      if (resetAll) {
+        if (typeof OfflineManager.resetDatabase === "function") {
+          await OfflineManager.resetDatabase();
+          clearedNative = true;
+        }
+      } else {
+        if (typeof OfflineManager.clearAmbientCache === "function") {
+          await OfflineManager.clearAmbientCache();
+          clearedNative = true;
+        }
+      }
+    } catch (err) {
+      console.warn("[offlineMapService] Error clearing native map cache:", err);
+    }
+  }
+
+  if (resetAll) {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY);
+    } catch (err) {
+      console.warn("[offlineMapService] Error removing offline trails from AsyncStorage:", err);
+    }
+  }
+
+  return { success: true, resetAll, clearedNative };
+}
+
 
