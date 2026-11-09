@@ -21,6 +21,7 @@ import HikeActivityPanel from "../components/HikeActivityPanel";
 import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 import HikeSummaryPopup from "../components/HikeSummaryPopup";
+import { calculateDistanceKm } from "../utils/geo";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
 const MAP_STYLE_URL = `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`;
@@ -44,9 +45,11 @@ export default function TrailSearchScreen() {
   const [hikeActive, setHikeActive] = useState(false);
   const [activeHikePanel, setActiveHikePanel] = useState(null);
   const [hikeSeconds, setHikeSeconds] = useState(0);
+  const [hikeDistanceKm, setHikeDistanceKm] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(INITIAL_VIEW_STATE.zoom);
   const cameraRef = useRef(null);
+  const lastHikePositionRef = useRef(null);
   const currentPosition = useCurrentPosition();
 
   useEffect(() => {
@@ -54,6 +57,35 @@ export default function TrailSearchScreen() {
       if (granted) LocationManager.start();
     });
   }, []);
+
+  // Distance calculation based on user movement during an active hike
+  useEffect(() => {
+    if (!hikeActive || showSummary || !currentPosition?.coords) return;
+
+    const { latitude, longitude, accuracy } = currentPosition.coords;
+    if (latitude == null || longitude == null) return;
+
+    // Filter out very poor accuracy readings (> 50m)
+    if (typeof accuracy === "number" && accuracy > 50) return;
+
+    if (!lastHikePositionRef.current) {
+      lastHikePositionRef.current = { latitude, longitude };
+      return;
+    }
+
+    const deltaKm = calculateDistanceKm(
+      lastHikePositionRef.current.latitude,
+      lastHikePositionRef.current.longitude,
+      latitude,
+      longitude
+    );
+
+    // Filter out micro GPS jitter (< 3 meters) and unreasonable jumps (> 500 meters)
+    if (deltaKm >= 0.003 && deltaKm < 0.5) {
+      setHikeDistanceKm((prev) => prev + deltaKm);
+      lastHikePositionRef.current = { latitude, longitude };
+    }
+  }, [currentPosition, hikeActive, showSummary]);
 
   // Timer pauses while the summary popup is showing
   useEffect(() => {
@@ -72,6 +104,8 @@ export default function TrailSearchScreen() {
     setSelectedTrailId(null);
     setActiveHikePanel(null);
     setHikeSeconds(0);
+    setHikeDistanceKm(0);
+    lastHikePositionRef.current = null;
     navigation.navigate("Home");
   }, [navigation]);
 
@@ -222,6 +256,7 @@ export default function TrailSearchScreen() {
             <HikeActivityPanel
               trail={selectedTrail}
               seconds={hikeSeconds}
+              distanceKm={hikeDistanceKm}
               onEndHike={handleEndHike}
               onMinimize={() => setActiveHikePanel(null)}
             />
@@ -238,6 +273,13 @@ export default function TrailSearchScreen() {
             setHikeActive(true);
             setActiveHikePanel("activity");
             setHikeSeconds(0);
+            setHikeDistanceKm(0);
+            lastHikePositionRef.current = currentPosition?.coords
+              ? {
+                  latitude: currentPosition.coords.latitude,
+                  longitude: currentPosition.coords.longitude,
+                }
+              : null;
           }}
         />
       )}
@@ -246,7 +288,7 @@ export default function TrailSearchScreen() {
         visible={showSummary}
         trail={selectedTrail}
         seconds={hikeSeconds}
-        distanceKm={0}
+        distanceKm={hikeDistanceKm}
         onReturnHome={handleReturnHome}
       />
     </View>
