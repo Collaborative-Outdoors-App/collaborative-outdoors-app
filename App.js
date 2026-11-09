@@ -23,41 +23,55 @@ import TrailSearchScreen from "./src/screens/TrailSearchScreen";
 import TwoStepSetup from "./src/screens/TwoStepSetup";
 import TwoStepVerification from "./src/screens/TwoStepVerification";
 import WearableSetup from "./src/screens/WearableSetup";
+import ForgotPasswordScreen from "./src/screens/ForgotPassword";
+
+import { AuthProvider, useAuth } from "./src/auth/authContext";
 
 const Stack = createNativeStackNavigator();
 
+function RootNavigator() {
+  const { user, checking } = useAuth();
+  if (checking) return null;
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName={user ? "Home" : "Login"}
+        screenOptions={{
+          header: (props) => <AppHeader {...props} />,
+        }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Groups" component={GroupScreen} />
+        <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
+        <Stack.Screen name="TrailSearch" component={TrailSearchScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="AccountDetails" component={AccountDetails} />
+        <Stack.Screen name="Achievements" component={Achievements} />
+        <Stack.Screen name="ActivityTrends" component={ActivityTrends} />
+        <Stack.Screen name="TwoStepSetup" component={TwoStepSetup} />
+        <Stack.Screen name="TwoStepVerification" component={TwoStepVerification} />
+        <Stack.Screen name="PersonalRecords" component={PersonalRecords} />
+        <Stack.Screen name="PersonalDetails" component={PersonalDetails} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="ConnectWearable" component={WearableSetup} />
+        <Stack.Screen name="MFASetup" component={MFASetup} />
+        <Stack.Screen name="HealthDetails" component={HealthDetailsScreen} />
+        <Stack.Screen name="OverexertionAlert" component={OverexertionAlertScreen} />
+        <Stack.Screen name="EmergencyNotified" component={EmergencyNotifiedScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
   return (
-    <>
+    <AuthProvider>
       <StatusBar style="auto" />
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            header: (props) => <AppHeader {...props} />,
-          }}
-        >
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="Groups" component={GroupScreen} />
-          <Stack.Screen name="GroupChat" component={GroupChatScreen} options={{ title: "Group chat" }} />
-          <Stack.Screen name="TrailSearch" component={TrailSearchScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="AccountDetails" component={AccountDetails} />
-          <Stack.Screen name="Achievements" component={Achievements} />
-          <Stack.Screen name="ActivityTrends" component={ActivityTrends} />
-          <Stack.Screen name="TwoStepSetup" component={TwoStepSetup} />
-          <Stack.Screen name="TwoStepVerification" component={TwoStepVerification} />
-          <Stack.Screen name="PersonalRecords" component={PersonalRecords} />
-          <Stack.Screen name="PersonalDetails" component={PersonalDetails} />
-          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-          <Stack.Screen name="ConnectWearable" component={WearableSetup} />
-          <Stack.Screen name="MFASetup" component={MFASetup} />
-          <Stack.Screen name="HealthDetails" component={HealthDetailsScreen} />
-          <Stack.Screen name="OverexertionAlert" component={OverexertionAlertScreen} />
-          <Stack.Screen name="EmergencyNotified" component={EmergencyNotifiedScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </>
+      <RootNavigator />
+    </AuthProvider>
   );
 }
