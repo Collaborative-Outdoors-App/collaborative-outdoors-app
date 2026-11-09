@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Button from '../components/Button';
-import { CURRENT_USER } from '../constants/currentUser';
+import { useAuth } from '../auth/authContext';
 
 const GREEN = '#2F5D46';
 
@@ -12,14 +12,14 @@ function getGreeting() {
 }
 
 export default function HomeScreen({ navigation }) {
-  const user = CURRENT_USER.currentUser;
-
+  const { user } = useAuth();
+  const firstName = user?.displayName?.split(' ')[0] || 'there';
   return (
     <View style={styles.screen}>
       {/* Greeting */}
       <View style={styles.header}>
         <Text style={styles.greeting}>{getGreeting()},</Text>
-        <Text style={styles.name}>{user.firstName}</Text>
+        <Text style={styles.name}>{firstName}</Text>
       </View>
 
       {/* Hero card */}
