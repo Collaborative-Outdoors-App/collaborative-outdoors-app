@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  AppState,
 } from "react-native";
 import {
   isTrailDownloaded,
@@ -13,6 +14,7 @@ import {
   downloadTrailMap,
   deleteTrailMap,
 } from "../services/offlineMapService";
+import { getTrailWeather } from "../services/weatherService";
 import { colors } from "../styles/theme";
 
 export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
@@ -20,6 +22,8 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
   const [downloadInfo, setDownloadInfo] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [weather, setWeather] = useState(null);
+  const [loadingWeather, setLoadingWeather] = useState(false);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -52,6 +56,64 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
   useEffect(() => {
     refreshDownloadStatus();
   }, [refreshDownloadStatus]);
+
+  const fetchWeather = useCallback(
+    async (showLoading = false) => {
+      const lat = trail?.start?.lat;
+      const lon = trail?.start?.lon;
+
+      if (lat == null || lon == null) {
+        if (isMountedRef.current) {
+          setWeather(null);
+          setLoadingWeather(false);
+        }
+        return;
+      }
+
+      if (showLoading && isMountedRef.current) {
+        setLoadingWeather(true);
+      }
+
+      try {
+        const data = await getTrailWeather(lat, lon);
+        if (isMountedRef.current) {
+          setWeather(data);
+          setLoadingWeather(false);
+        }
+      } catch {
+        if (isMountedRef.current) {
+          setWeather({ unavailable: true });
+          setLoadingWeather(false);
+        }
+      }
+    },
+    [trail?.start?.lat, trail?.start?.lon]
+  );
+
+  // Initial fetch on mount or trail change
+  useEffect(() => {
+    fetchWeather(true);
+  }, [fetchWeather]);
+
+  // Re-check when app regains focus (e.g. after toggling Wi-Fi in settings or control center)
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        fetchWeather(false);
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [fetchWeather]);
+
+  // Live polling check every 5 seconds to instantly reflect network connection drops/restorations
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchWeather(false);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchWeather]);
 
   if (!trail) return null;
 
@@ -154,6 +216,26 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
           <View style={styles.subtitleRow}>
             {trail.lengthKm ? (
               <Text style={styles.subtitle}>{trail.lengthKm} km</Text>
+            ) : null}
+            {loadingWeather ? (
+              <View style={styles.weatherBadge}>
+                <ActivityIndicator size="small" color="#64748b" style={{ transform: [{ scale: 0.65 }] }} />
+                <Text style={styles.weatherLoadingText}>Weather...</Text>
+              </View>
+            ) : weather ? (
+              <TouchableOpacity
+                style={styles.weatherBadge}
+                activeOpacity={0.7}
+                onPress={() => fetchWeather(true)}
+              >
+                {weather.unavailable ? (
+                  <Text style={styles.weatherUnavailableText}>Weather unavailable</Text>
+                ) : (
+                  <Text style={styles.weatherText}>
+                    {weather.icon} {weather.temp}°C {weather.condition}
+                  </Text>
+                )}
+              </TouchableOpacity>
             ) : null}
             {isDownloaded && downloadInfo?.downloadedAt && (
               <Text style={styles.downloadedDate}>
@@ -264,6 +346,32 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: "#64748b",
+  },
+  weatherBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginLeft: 8,
+    borderWidth: 0.5,
+    borderColor: "#E2E8F0",
+  },
+  weatherText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#334155",
+  },
+  weatherUnavailableText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#64748b",
+  },
+  weatherLoadingText: {
+    fontSize: 11,
+    color: "#64748b",
+    marginLeft: 4,
   },
   downloadedDate: {
     fontSize: 12,
