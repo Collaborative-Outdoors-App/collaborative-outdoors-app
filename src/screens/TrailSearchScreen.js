@@ -84,6 +84,8 @@ export default function TrailSearchScreen() {
     if (deltaKm >= 0.003 && deltaKm < 0.5) {
       setHikeDistanceKm((prev) => prev + deltaKm);
       lastHikePositionRef.current = { latitude, longitude };
+    } else if (deltaKm >= 0.5) {
+      lastHikePositionRef.current = { latitude, longitude };
     }
   }, [currentPosition, hikeActive, showSummary]);
 
