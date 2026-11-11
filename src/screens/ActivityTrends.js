@@ -60,6 +60,17 @@ function Stat({ label, value }) {
   );
 }
 
+function ChartSkeleton() {
+  return (
+    <View
+      style={styles.skeletonCard}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading activity chart"
+    >
+    </View>
+  );
+}
+
 export default function ActivityTrends() {
   const [dataFetched, setDataFetched] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -256,7 +267,7 @@ export default function ActivityTrends() {
 
       {/* Chart */}
       {loading ? (
-        <Text style={styles.statusText}>Loading activity data...</Text>
+        <ChartSkeleton />
       ) : error ? (
         <Text style={styles.errorText}>{error}</Text>
       ) : (
@@ -475,5 +486,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#B91C1C',
     paddingVertical: 30,
+  },
+  skeletonCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    minHeight: 268,
+    justifyContent: 'center',
   },
 });
