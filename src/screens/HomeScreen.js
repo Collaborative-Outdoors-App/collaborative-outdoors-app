@@ -1,6 +1,8 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import Button from '../components/Button';
-import { CURRENT_USER } from '../constants/currentUser';
+import { useAuth } from '../auth/authContext';
+import { clearMapCache } from '../services/offlineMapService';
 
 const GREEN = '#2F5D46';
 
@@ -12,14 +14,65 @@ function getGreeting() {
 }
 
 export default function HomeScreen({ navigation }) {
-  const user = CURRENT_USER.currentUser;
+  const { user } = useAuth();
+  const firstName = user?.displayName?.split(' ')[0] || 'there';
+  
+  const [clearing, setClearing] = useState(false);
+
+  const handleClearMapCache = () => {
+    Alert.alert(
+      'Clear Map Cache',
+      'Select how you want to clear MapLibre cache to test offline maps:',
+      [
+        {
+          text: 'Clear Browsing Cache',
+          onPress: async () => {
+            setClearing(true);
+            try {
+              await clearMapCache({ resetAll: false });
+              Alert.alert(
+                'Browsing Cache Cleared',
+                'Temporary tiles cached while browsing online have been deleted. Explicitly downloaded offline trail packs are kept intact so you can test offline rendering.'
+              );
+            } catch (err) {
+              Alert.alert('Error', 'Could not clear map cache: ' + err.message);
+            } finally {
+              setClearing(false);
+            }
+          },
+        },
+        {
+          text: 'Reset All (Wipe Everything)',
+          style: 'destructive',
+          onPress: async () => {
+            setClearing(true);
+            try {
+              await clearMapCache({ resetAll: true });
+              Alert.alert(
+                'All Map Cache Reset',
+                'All MapLibre ambient cache and downloaded offline packs have been completely erased.'
+              );
+            } catch (err) {
+              Alert.alert('Error', 'Could not reset map cache: ' + err.message);
+            } finally {
+              setClearing(false);
+            }
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.screen}>
       {/* Greeting */}
       <View style={styles.header}>
         <Text style={styles.greeting}>{getGreeting()},</Text>
-        <Text style={styles.name}>{user.firstName}</Text>
+        <Text style={styles.name}>{firstName}</Text>
       </View>
 
       {/* Hero card */}
@@ -49,6 +102,24 @@ export default function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate('Groups')}
           style={styles.rowButton}
         />
+      </View>
+
+      {/* Debug Map Cache */}
+      <Text style={[styles.sectionTitle, { marginTop: 28 }]}>Debug Tools</Text>
+      <View style={styles.debugCard}>
+        <Text style={styles.debugSubtitle}>
+          Clear MapLibre tile cache to test if downloaded offline maps render when offline.
+        </Text>
+        {clearing ? (
+          <ActivityIndicator size="small" color={GREEN} style={{ marginVertical: 12 }} />
+        ) : (
+          <Button
+            title="Clear Map Cache"
+            variant="outline"
+            onPress={handleClearMapCache}
+            style={styles.debugButton}
+          />
+        )}
       </View>
     </View>
   );
@@ -115,5 +186,21 @@ const styles = StyleSheet.create({
   },
   rowButton: {
     flex: 1,
+  },
+  debugCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  debugSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  debugButton: {
+    marginVertical: 4,
   },
 });

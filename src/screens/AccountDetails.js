@@ -1,10 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import AuthenticationButtons from '../components/AuthenticationButtons';
-import NavBar from '../components/NavBar';
 import { colors, common } from '../styles/theme';
-import { CURRENT_USER as currentUserData } from '../constants/currentUser';
-
-const currentUser = currentUserData.currentUser;
+import { useAuth } from '../auth/authContext';
 
 function Row({ label, onPress, last }) {
   return (
@@ -20,16 +16,26 @@ function Row({ label, onPress, last }) {
 }
 
 export default function ProfileScreen({ navigation }) {
+  const { user } = useAuth();
+  const fullName = user?.displayName || 'Hiker';
+  const initials =
+    fullName
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || (user?.email?.[0] ?? '?').toUpperCase();
   return (
     <View style={common.screen}>
       <ScrollView contentContainerStyle={common.content}>
         <View style={[common.card, styles.profile]}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{currentUser.firstName[0]}{currentUser.lastName[0]}</Text>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
           <View>
-            <Text style={styles.name}>{currentUser.firstName} {currentUser.lastName}</Text>
-            <Text style={styles.email}>{currentUser.email}</Text>
+            <Text style={styles.name}>{fullName}</Text>
+            <Text style={styles.email}>{user?.email}</Text>
           </View>
         </View>
 

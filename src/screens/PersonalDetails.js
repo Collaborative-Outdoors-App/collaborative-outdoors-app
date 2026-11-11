@@ -4,9 +4,18 @@ import AuthenticationButtons from '../components/AuthenticationButtons';
 import TextField from '../components/InputTexts';
 import { colors, common } from '../styles/theme';
 import { CURRENT_USER as currentUserData } from '../constants/currentUser';
+import { updateProfile } from 'firebase/auth';
+import Banner from '../components/MessageBanner';
+import { auth } from '../firebase/firebaseConfig';
+import { authMessage } from '../firebase/authErrors';
+import { useAuth } from '../auth/authContext';
 
-const currentUser = currentUserData.currentUser;
-const contact = currentUser.emergencyContacts[0];
+const contact = currentUserData.currentUser.emergencyContacts?.[0];
+
+function getInitials(name, email) {
+  const letters = (name || '').split(' ').filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+  return letters || (email?.[0] ?? '?').toUpperCase();
+}
 
 function ToggleRow({ label, value, onValueChange, last }) {
   return (
@@ -18,38 +27,58 @@ function ToggleRow({ label, value, onValueChange, last }) {
 }
 
 export default function AccountDetails({ navigation }) {
-  const [fullName, setFullName] = useState(`${currentUser.firstName} ${currentUser.lastName}`);
-  const [contactName, setContactName] = useState(`${contact.firstName} ${contact.lastName}`);
-  const [contactPhone, setContactPhone] = useState(contact.phoneNumber);
+  const { user, refreshUser } = useAuth();
+
+  const [fullName, setFullName] = useState(user?.displayName ?? '');
+  const [contactName, setContactName] = useState(contact ? `${contact.firstName} ${contact.lastName}` : '');
+  const [contactPhone, setContactPhone] = useState(contact?.phoneNumber ?? '');
   const [pushEnabled, setPushEnabled] = useState(true);
-  const [shareHeartRate, setShareHeartRate] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const nameError = submitted && !fullName.trim() ? 'Enter your full name' : '';
 
-  const handleSave = () => {
-    setSubmitted(true);
-    if (!fullName.trim()) return;
+  const handleSave = async () => {
+  if (saving) return;
+  setSubmitted(true);
+  setFormError('');
+  if (!fullName.trim()) return;
+
+  setSaving(true);
+  try {
+    if (fullName.trim() !== (user?.displayName ?? '')) {
+      await updateProfile(auth.currentUser, { displayName: fullName.trim() });
+      refreshUser();
+    }
     Alert.alert('Details saved', 'Your personal details were updated.', [
       { text: 'OK', onPress: () => navigation.goBack() },
     ]);
-  };
+  } catch (e) {
+    setFormError(authMessage(e.code));
+  } finally {
+    setSaving(false);
+  }
+};
+
+
 
   return (
     <KeyboardAvoidingView style={common.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={common.content} keyboardShouldPersistTaps="handled">
         <View style={[common.card, styles.profile]}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{currentUser.firstName[0]}{currentUser.lastName[0]}</Text>
+            <Text style={styles.avatarText}>{getInitials(fullName, user?.email)}</Text>
           </View>
           <View>
             <Text style={styles.name}>{fullName}</Text>
-            <Text style={styles.email}>{currentUser.email}</Text>
+            <Text style={styles.email}>{user?.email}</Text>
           </View>
         </View>
 
         <TextField label="Full Name" value={fullName} onChangeText={setFullName} error={nameError} />
         <TextField label="Emergency Contact Name" value={contactName} onChangeText={setContactName} />
+        {formError ? <Banner type="error" title="Could not save" text={formError} /> : null}
         <TextField
           label="Emergency Contact Phone Number"
           value={contactPhone}

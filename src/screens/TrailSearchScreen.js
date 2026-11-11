@@ -10,6 +10,7 @@ import {
   UserLocation,
   LocationManager,
   useCurrentPosition,
+  Marker,
 } from "@maplibre/maplibre-react-native";
 import { getTrailGeometry } from "../constants/trails/geometry";
 import trailsData from "../constants/trails/trails.json";
@@ -20,6 +21,7 @@ import HikeActivityPanel from "../components/HikeActivityPanel";
 import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 import HikeSummaryPopup from "../components/HikeSummaryPopup";
+import { calculateDistanceKm } from "../utils/geo";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
 const MAP_STYLE_URL = `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`;
@@ -30,21 +32,6 @@ const FIT_BOUNDS_PADDING = { top: 110, bottom: 200, left: 60, right: 60 };
 const LINE_LAYOUT = { "line-cap": "round", "line-join": "round" };
 const CASING_PAINT = { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.9 };
 const LINE_PAINT = { "line-color": "#ea580c", "line-width": 5, "line-opacity": 0.95 };
-const GLOW_PAINT = { "circle-radius": 13, "circle-color": "#2563eb", "circle-opacity": 0.2 };
-const POINT_PAINT = {
-  "circle-radius": 7,
-  "circle-color": "#2563eb",
-  "circle-stroke-width": 2.5,
-  "circle-stroke-color": "#ffffff",
-};
-const LABEL_LAYOUT = {
-  "text-field": ["get", "name"],
-  "text-size": 12,
-  "text-offset": [0, 1.3],
-  "text-anchor": "top",
-  "text-allow-overlap": false,
-};
-const LABEL_PAINT = { "text-color": "#0f172a", "text-halo-color": "#ffffff", "text-halo-width": 1.5 };
 
 const HIKE_PANEL_BTNS = [
   { key: "activity", label: "⏱ Activity" },
@@ -58,8 +45,11 @@ export default function TrailSearchScreen() {
   const [hikeActive, setHikeActive] = useState(false);
   const [activeHikePanel, setActiveHikePanel] = useState(null);
   const [hikeSeconds, setHikeSeconds] = useState(0);
+  const [hikeDistanceKm, setHikeDistanceKm] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(INITIAL_VIEW_STATE.zoom);
   const cameraRef = useRef(null);
+  const lastHikePositionRef = useRef(null);
   const currentPosition = useCurrentPosition();
 
   useEffect(() => {
@@ -67,6 +57,37 @@ export default function TrailSearchScreen() {
       if (granted) LocationManager.start();
     });
   }, []);
+
+  // Distance calculation based on user movement during an active hike
+  useEffect(() => {
+    if (!hikeActive || showSummary || !currentPosition?.coords) return;
+
+    const { latitude, longitude, accuracy } = currentPosition.coords;
+    if (latitude == null || longitude == null) return;
+
+    // Filter out very poor accuracy readings (> 50m)
+    if (typeof accuracy === "number" && accuracy > 50) return;
+
+    if (!lastHikePositionRef.current) {
+      lastHikePositionRef.current = { latitude, longitude };
+      return;
+    }
+
+    const deltaKm = calculateDistanceKm(
+      lastHikePositionRef.current.latitude,
+      lastHikePositionRef.current.longitude,
+      latitude,
+      longitude
+    );
+
+    // Filter out micro GPS jitter (< 3 meters) and unreasonable jumps (> 500 meters)
+    if (deltaKm >= 0.003 && deltaKm < 0.5) {
+      setHikeDistanceKm((prev) => prev + deltaKm);
+      lastHikePositionRef.current = { latitude, longitude };
+    } else if (deltaKm >= 0.5) {
+      lastHikePositionRef.current = { latitude, longitude };
+    }
+  }, [currentPosition, hikeActive, showSummary]);
 
   // Timer pauses while the summary popup is showing
   useEffect(() => {
@@ -85,6 +106,8 @@ export default function TrailSearchScreen() {
     setSelectedTrailId(null);
     setActiveHikePanel(null);
     setHikeSeconds(0);
+    setHikeDistanceKm(0);
+    lastHikePositionRef.current = null;
     navigation.navigate("Home");
   }, [navigation]);
 
@@ -122,17 +145,8 @@ export default function TrailSearchScreen() {
     [selectedTrail]
   );
 
-  const trailsGeoJSON = useMemo(() => {
-    const list = hikeActive ? (selectedTrail ? [selectedTrail] : []) : filteredTrails;
-    return {
-      type: "FeatureCollection",
-      features: list.map((trail) => ({
-        type: "Feature",
-        id: trail.trailId,
-        geometry: { type: "Point", coordinates: [trail.start.lon, trail.start.lat] },
-        properties: { id: trail.trailId, name: trail.name },
-      })),
-    };
+  const visibleTrails = useMemo(() => {
+    return hikeActive ? (selectedTrail ? [selectedTrail] : []) : filteredTrails;
   }, [hikeActive, selectedTrail, filteredTrails]);
 
   const handleSelectTrail = (id) => {
@@ -146,11 +160,12 @@ export default function TrailSearchScreen() {
     }
   };
 
-  const handleTrailPress = (event) => {
-    if (hikeActive) return;
-    const feat = event?.features?.[0] || event?.nativeEvent?.features?.[0];
-    if (feat) handleSelectTrail(feat.properties.id);
-  };
+  const handleRegionDidChange = useCallback((event) => {
+    const zoom = event?.nativeEvent?.zoom ?? event?.zoom;
+    if (typeof zoom === "number") {
+      setCurrentZoom(zoom);
+    }
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -161,7 +176,12 @@ export default function TrailSearchScreen() {
           <DistanceFilter onFilterChange={setDistanceFilter} />
         </>
       )}
-      <Map style={styles.map} mapStyle={MAP_STYLE_URL} onPress={Keyboard.dismiss}>
+      <Map
+        style={styles.map}
+        mapStyle={MAP_STYLE_URL}
+        onRegionDidChange={handleRegionDidChange}
+        onPress={Keyboard.dismiss}
+      >
         <Camera ref={cameraRef} initialViewState={INITIAL_VIEW_STATE} />
         <UserLocation animated />
 
@@ -172,11 +192,43 @@ export default function TrailSearchScreen() {
           </GeoJSONSource>
         )}
 
-        <GeoJSONSource id="trails-source" data={trailsGeoJSON} onPress={handleTrailPress}>
-          <Layer id="trails-glow" type="circle" paint={GLOW_PAINT} />
-          <Layer id="trails-point" type="circle" paint={POINT_PAINT} />
-          <Layer id="trails-label" type="symbol" layout={LABEL_LAYOUT} paint={LABEL_PAINT} />
-        </GeoJSONSource>
+        {visibleTrails.map((trail) => {
+          const isSelected = String(trail.trailId) === String(selectedTrailId);
+          // Show label if:
+          // 1. This trail is selected (always show active selection's label)
+          // 2. No trail is selected AND zoomed in (hide when another trail has details displayed or when zoomed out)
+          const showLabel = isSelected || (!selectedTrailId && currentZoom >= 12.5);
+
+          return (
+            <Marker
+              key={String(trail.trailId)}
+              id={`marker-${trail.trailId}`}
+              lngLat={[trail.start.lon, trail.start.lat]}
+              anchor="center"
+              onPress={() => handleSelectTrail(trail.trailId)}
+            >
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => handleSelectTrail(trail.trailId)}
+                style={styles.markerContainer}
+              >
+                <View style={[styles.markerGlow, isSelected && styles.markerGlowSelected]}>
+                  <View style={[styles.markerDot, isSelected && styles.markerDotSelected]} />
+                </View>
+                {showLabel && (
+                  <View style={[styles.markerLabelBox, isSelected && styles.markerLabelBoxSelected]}>
+                    <Text
+                      style={[styles.markerLabelText, isSelected && styles.markerLabelTextSelected]}
+                      numberOfLines={1}
+                    >
+                      {trail.name}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </Marker>
+          );
+        })}
       </Map>
 
       <LocationButton onPress={handleZoomToUserLocation} style={{ bottom: bottomOffset }} />
@@ -206,6 +258,7 @@ export default function TrailSearchScreen() {
             <HikeActivityPanel
               trail={selectedTrail}
               seconds={hikeSeconds}
+              distanceKm={hikeDistanceKm}
               onEndHike={handleEndHike}
               onMinimize={() => setActiveHikePanel(null)}
             />
@@ -222,6 +275,13 @@ export default function TrailSearchScreen() {
             setHikeActive(true);
             setActiveHikePanel("activity");
             setHikeSeconds(0);
+            setHikeDistanceKm(0);
+            lastHikePositionRef.current = currentPosition?.coords
+              ? {
+                  latitude: currentPosition.coords.latitude,
+                  longitude: currentPosition.coords.longitude,
+                }
+              : null;
           }}
         />
       )}
@@ -230,7 +290,7 @@ export default function TrailSearchScreen() {
         visible={showSummary}
         trail={selectedTrail}
         seconds={hikeSeconds}
-        distanceKm={0}
+        distanceKm={hikeDistanceKm}
         onReturnHome={handleReturnHome}
       />
     </View>
@@ -261,4 +321,61 @@ const styles = StyleSheet.create({
   hikeButtonActive: { backgroundColor: "#0f172a" },
   hikeButtonText: { fontSize: 13, fontWeight: "700", color: "#334155" },
   hikeButtonTextActive: { color: "#ffffff" },
+  markerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markerGlow: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "rgba(37, 99, 235, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markerGlowSelected: {
+    backgroundColor: "rgba(234, 88, 12, 0.25)",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  markerDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#2563eb",
+    borderWidth: 2.5,
+    borderColor: "#ffffff",
+  },
+  markerDotSelected: {
+    backgroundColor: "#ea580c",
+  },
+  markerLabelBox: {
+    marginTop: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: "#cbd5e1",
+    maxWidth: 140,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  markerLabelBoxSelected: {
+    backgroundColor: "#0f172a",
+    borderColor: "#0f172a",
+  },
+  markerLabelText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#0f172a",
+    textAlign: "center",
+  },
+  markerLabelTextSelected: {
+    color: "#ffffff",
+  },
 });

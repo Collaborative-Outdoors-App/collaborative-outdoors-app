@@ -13,13 +13,14 @@ export default function HikeSummaryPopup({
   visible,
   trail,
   seconds = 0,
-  distanceKm = 0, // placeholder until distance tracking exists
+  distanceKm = 0,
   caloriesBurned = 320, // placeholder static value
   onReturnHome,
 }) {
+  const safeDistance = typeof distanceKm === "number" && !isNaN(distanceKm) ? distanceKm : 0;
   const stats = [
     { label: "Time Elapsed", value: formatTime(seconds) },
-    { label: "Distance Travelled", value: `${distanceKm.toFixed(2)} km` },
+    { label: "Distance Travelled", value: `${safeDistance.toFixed(2)} km` },
     { label: "Trail Length", value: trail?.lengthKm ? `${trail.lengthKm} km` : "--" },
     {
       label: "Calories Burned",
