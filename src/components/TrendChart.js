@@ -41,8 +41,7 @@ export default function TrendChart({
           initialSpacing={INITIAL_SPACING}
           endSpacing={END_SPACING}
           spacing={spacing}
-          curved
-          curvature={0.08} // gentler curve so it doesn't dip below zero
+          curved={false}
           areaChart
           isAnimated
           animationDuration={600}
