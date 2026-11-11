@@ -21,6 +21,7 @@ import HikeActivityPanel from "../components/HikeActivityPanel";
 import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 import HikeSummaryPopup from "../components/HikeSummaryPopup";
+import { saveHike } from "../services/saveHikeService";
 import { calculateDistanceKm } from "../utils/geo";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
@@ -48,6 +49,7 @@ export default function TrailSearchScreen() {
   const [hikeDistanceKm, setHikeDistanceKm] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(INITIAL_VIEW_STATE.zoom);
+  const [saveStatus, setSaveStatus] = useState("idle"); // "idle" | "saving" | "saved" | "error"
   const cameraRef = useRef(null);
   const lastHikePositionRef = useRef(null);
   const currentPosition = useCurrentPosition();
@@ -97,7 +99,21 @@ export default function TrailSearchScreen() {
   }, [hikeActive, showSummary]);
 
   // Called when "End Hike" is pressed: show the summary, keep state intact
-  const handleEndHike = useCallback(() => setShowSummary(true), []);
+  const handleEndHike = useCallback(async () => {
+    setShowSummary(true); 
+
+    if (saveStatus === "saving" || saveStatus === "saved") return; // ignore double taps
+
+    setSaveStatus("saving");
+    try {
+      await saveHike({ seconds: hikeSeconds, distanceKm: hikeDistanceKm });
+      console.log("SAVED!");
+      setSaveStatus("saved");
+    } catch (err) {
+      console.warn("Failed to save hike:", err.message);
+      setSaveStatus("error");
+    }
+  }, [hikeSeconds, hikeDistanceKm, saveStatus]);
 
   // Called from the popup: reset everything and go home
   const handleReturnHome = useCallback(() => {
