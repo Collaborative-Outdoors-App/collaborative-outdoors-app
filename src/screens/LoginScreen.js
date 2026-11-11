@@ -4,7 +4,9 @@ import AuthenticationButtons from '../components/AuthenticationButtons';
 import Banner from '../components/MessageBanner';
 import TextField from '../components/InputTexts';
 import { common } from '../styles/theme';
-import { twoStepEnabled } from '../constants/currentUser';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase/firebaseConfig';
+import { authMessage } from '../firebase/authErrors';
 
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,24 +17,30 @@ export default function LoginScreen({ navigation, route }) {
   const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState('');
+  const [loading, setLoading] = useState(false);
   const passwordRef = useRef(null);
 
   const emailError = submitted && !EMAIL_PATTERN.test(email.trim()) ? 'Enter a valid email address' : '';
   const passwordError = submitted && !password ? 'Enter your password' : '';
-
-  const handleLogin = () => {
+  
+ 
+   const handleLogin = async () => {
+    if (loading) return;
     setSubmitted(true);
     setFormError('');
     if (!EMAIL_PATTERN.test(email.trim()) || !password) return;
-    
 
-    if (password === 'wrong') {
-      setFormError('Incorrect email or password. Please try again.');
-      return;
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    } catch (e) {
+      setFormError(authMessage(e.code));
+    } finally {
+      setLoading(false);
     }
-    if (twoStepEnabled) navigation.navigate('TwoStepVerification');
-    else navigation.reset({ index: 0, routes: [{ name: 'TwoStepVerification' }] });
   };
+
 
   return (
     <KeyboardAvoidingView style={common.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -71,11 +79,10 @@ export default function LoginScreen({ navigation, route }) {
 
         <Pressable
           style={{ alignSelf: 'flex-end' }}
-          onPress={() => Alert.alert('Reset link sent', 'Check your email for a password reset link.')}
-        >
-          <Text style={common.linkText}>Forgot password?</Text>
+          onPress={() => navigation.navigate('ForgotPassword', { email: email.trim() })}>
+        <Text style={common.linkText}>Forgot password?</Text>
         </Pressable>
-
+        
         <View style={{ height: 8 }} />
         <AuthenticationButtons title="Log in" onPress={handleLogin} />
 

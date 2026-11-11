@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import Button from '../components/Button';
-import { CURRENT_USER } from '../constants/currentUser';
+import { useAuth } from '../auth/authContext';
 import { clearMapCache } from '../services/offlineMapService';
 
 const GREEN = '#2F5D46';
@@ -14,7 +14,9 @@ function getGreeting() {
 }
 
 export default function HomeScreen({ navigation }) {
-  const user = CURRENT_USER.currentUser;
+  const { user } = useAuth();
+  const firstName = user?.displayName?.split(' ')[0] || 'there';
+  
   const [clearing, setClearing] = useState(false);
 
   const handleClearMapCache = () => {
@@ -70,7 +72,7 @@ export default function HomeScreen({ navigation }) {
       {/* Greeting */}
       <View style={styles.header}>
         <Text style={styles.greeting}>{getGreeting()},</Text>
-        <Text style={styles.name}>{user.firstName}</Text>
+        <Text style={styles.name}>{firstName}</Text>
       </View>
 
       {/* Hero card */}

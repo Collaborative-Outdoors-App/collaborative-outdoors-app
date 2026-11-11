@@ -1,6 +1,10 @@
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import Button from '../components/Button';
 import { CURRENT_USER } from '../constants/currentUser';
+import { auth } from '../firebase/firebaseConfig';
+import { authMessage } from '../firebase/authErrors';
+import { useAuth } from '../auth/authContext';
+import { signOut } from 'firebase/auth';
 
 
 const GREEN = '#2F5D46';
@@ -26,25 +30,31 @@ function Stat({ label, value }) {
 }
 
 export default function ProfileScreen({ navigation }) {
-  const user = CURRENT_USER.currentUser;
-  const initials = `${user.firstName[0]}${user.lastName[0]}`;
+  const { user } = useAuth();
+  const profile = CURRENT_USER.currentUser; 
 
-  const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: () => {
-          // TODO: clear auth state / tokens here
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
-        },
+  const fullName = user?.displayName || 'Hiker';
+  const initials =
+    fullName
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || (user?.email?.[0] ?? '?').toUpperCase();
+
+  const confirmLogout = () =>
+  Alert.alert('Log out?', "If you're offline you won't be able to sign back in until you're connected.", [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Log out',
+      style: 'destructive',
+      onPress: async () => {
+        await signOut(auth);
+        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
       },
-    ]);
-  };
+    },
+  ]);
 
   return (
     <ScrollView
@@ -57,20 +67,18 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
-        <Text style={styles.name}>
-          {user.firstName} {user.lastName}
-        </Text>
-        <Text style={styles.email}>{user.email}</Text>
+        <Text style={styles.name}>{fullName}</Text>
+         <Text style={styles.email}>{user?.email}</Text>
       </View>
 
       {/* Stats */}
       <View style={styles.card}>
         <View style={styles.statsRow}>
-          <Stat label="Age" value={getAge(user.dateOfBirth)} />
+          <Stat label="Age" value={getAge(profile.dateOfBirth)} />
           <View style={styles.divider} />
-          <Stat label="Weight" value={`${user.weightKg} kg`} />
+          <Stat label="Weight" value={`${profile.weightKg} kg`} />
           <View style={styles.divider} />
-          <Stat label="Groups" value={user.groupIds.length} />
+          <Stat label="Groups" value={profile.groupIds.length} />
         </View>
       </View>
 
@@ -97,7 +105,7 @@ export default function ProfileScreen({ navigation }) {
       {/* Logout */}
       <Button
         title="Log Out"
-        onPress={handleLogout}
+        onPress={confirmLogout}
         style={styles.logoutButton}
       />
     </ScrollView>
