@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Button from '../components/Button';
 import { useAuth } from '../auth/authContext';
 
+
 const GREEN = '#2F5D46';
 
 function getGreeting() {

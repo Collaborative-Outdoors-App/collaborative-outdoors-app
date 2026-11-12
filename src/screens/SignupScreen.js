@@ -11,7 +11,8 @@ import { common } from '../styles/theme';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignupScreen({ navigation }) {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -20,7 +21,8 @@ export default function SignupScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const errors = {
-    name: submitted && !name.trim() ? 'Enter your name' : '',
+    firstName: submitted && !firstName.trim() ? 'Enter your first name' : '',
+    lastName: submitted && !lastName.trim() ? 'Enter your last name' : '',
     email: submitted && !EMAIL_PATTERN.test(email.trim()) ? 'Enter a valid email address' : '',
     password: submitted && !isPasswordValid(password) ? 'Password does not meet the rules below' : '',
     confirm: submitted && confirm !== password ? 'Passwords do not match' : '',
@@ -30,15 +32,14 @@ export default function SignupScreen({ navigation }) {
     if (loading) return;
     setSubmitted(true);
     setFormError('');
-    if (!name.trim() || !EMAIL_PATTERN.test(email.trim()) || !isPasswordValid(password) || confirm !== password) return;
+    if (!firstName.trim() || !lastName.trim() || !EMAIL_PATTERN.test(email.trim()) || !isPasswordValid(password) || confirm !== password) return;
 
     setLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      await updateProfile(cred.user, { displayName: name.trim() });
-      Alert.alert('Account created', "Let's set up two-step verification.", [
-        { text: 'OK', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'TwoStepSetup' }] }) },
-      ]);
+      await updateProfile(cred.user, { displayName: `${firstName.trim()} ${lastName.trim()}` });
+      navigation.reset({index: 0,routes: [{ name: 'AboutYou', params: { firstName: firstName.trim(), lastName: lastName.trim() } }],
+      });
     } catch (e) {
       setFormError(authMessage(e.code));
     } finally {
@@ -52,7 +53,8 @@ export default function SignupScreen({ navigation }) {
         <Text style={common.title}>Create your account</Text>
         <Text style={common.subtitle}>Join your group and hike together.</Text>
 
-        <TextField label="Full name" value={name} onChangeText={setName} placeholder="Your name" error={errors.name} />
+        <TextField label="First name" value={firstName} onChangeText={setFirstName} placeholder="First name" error={errors.firstName} />
+        <TextField label="Last name" value={lastName} onChangeText={setLastName} placeholder="Last name" error={errors.lastName} />
         <TextField
           label="Email"
           value={email}
@@ -81,6 +83,7 @@ export default function SignupScreen({ navigation }) {
           error={errors.confirm}
           autoCapitalize="none"
         />
+        
 
         {formError ? <Text style={{ color: '#c0392b', marginBottom: 8 }}>{formError}</Text> : null}
 
