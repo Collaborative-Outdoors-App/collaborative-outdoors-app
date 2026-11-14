@@ -21,6 +21,8 @@ import HikeActivityPanel from "../components/HikeActivityPanel";
 import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 import HikeSummaryPopup from "../components/HikeSummaryPopup";
+import AchievementUnlockedPopup from "../components/AchievementUnlockedPopup";
+import { saveHike } from "../services/saveHikeService";
 import { calculateDistanceKm } from "../utils/geo";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
@@ -47,7 +49,10 @@ export default function TrailSearchScreen() {
   const [hikeSeconds, setHikeSeconds] = useState(0);
   const [hikeDistanceKm, setHikeDistanceKm] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
+  const [achievementQueue, setAchievementQueue] = useState([]);
+  const [totalUnlockedCount, setTotalUnlockedCount] = useState(0);
   const [currentZoom, setCurrentZoom] = useState(INITIAL_VIEW_STATE.zoom);
+  const [saveStatus, setSaveStatus] = useState("idle"); // "idle" | "saving" | "saved" | "error"
   const cameraRef = useRef(null);
   const lastHikePositionRef = useRef(null);
   const currentPosition = useCurrentPosition();
@@ -96,8 +101,34 @@ export default function TrailSearchScreen() {
     return () => clearInterval(timer);
   }, [hikeActive, showSummary]);
 
-  // Called when "End Hike" is pressed: show the summary, keep state intact
-  const handleEndHike = useCallback(() => setShowSummary(true), []);
+  const handleEndHike = useCallback(async () => {
+    setShowSummary(true);
+
+    if (saveStatus === "saving" || saveStatus === "saved") return; // ignore double taps
+
+    setSaveStatus("saving");
+    try {
+      const response = await saveHike({ seconds: hikeSeconds, distanceKm: hikeDistanceKm });
+      const earnedAchievements = response?.newAchievements ?? [];
+
+      console.log("SAVED!");
+      console.log("Earned achievements:", earnedAchievements);
+
+      if (Array.isArray(earnedAchievements) && earnedAchievements.length > 0) {
+        setAchievementQueue(earnedAchievements);
+        setTotalUnlockedCount(earnedAchievements.length);
+      }
+
+      setSaveStatus("saved");
+    } catch (err) {
+      console.warn("Failed to save hike:", err.message);
+      setSaveStatus("error");
+    }
+  }, [hikeSeconds, hikeDistanceKm, saveStatus]);
+
+  const handleDismissAchievement = useCallback(() => {
+    setAchievementQueue((prev) => prev.slice(1));
+  }, []);
 
   // Called from the popup: reset everything and go home
   const handleReturnHome = useCallback(() => {
@@ -107,6 +138,8 @@ export default function TrailSearchScreen() {
     setActiveHikePanel(null);
     setHikeSeconds(0);
     setHikeDistanceKm(0);
+    setAchievementQueue([]);
+    setTotalUnlockedCount(0);
     lastHikePositionRef.current = null;
     navigation.navigate("Home");
   }, [navigation]);
@@ -276,6 +309,8 @@ export default function TrailSearchScreen() {
             setActiveHikePanel("activity");
             setHikeSeconds(0);
             setHikeDistanceKm(0);
+            setAchievementQueue([]);
+            setTotalUnlockedCount(0);
             lastHikePositionRef.current = currentPosition?.coords
               ? {
                   latitude: currentPosition.coords.latitude,
@@ -292,6 +327,14 @@ export default function TrailSearchScreen() {
         seconds={hikeSeconds}
         distanceKm={hikeDistanceKm}
         onReturnHome={handleReturnHome}
+      />
+
+      <AchievementUnlockedPopup
+        visible={achievementQueue.length > 0}
+        achievement={achievementQueue[0]}
+        currentIndex={totalUnlockedCount - achievementQueue.length + 1}
+        totalCount={totalUnlockedCount}
+        onDismiss={handleDismissAchievement}
       />
     </View>
   );
