@@ -1,4 +1,8 @@
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { Modal, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { useCurrentUser } from "../auth/useCurrentUser";
+import { CURRENT_USER } from "../constants/currentUser";
+import { parseDob, ageFromDob } from "../utils/age";
 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -9,22 +13,85 @@ const formatTime = (seconds) => {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 };
 
+/**
+ * Calculates estimated calories burned during a hike based on distance, age, and weight.
+ *
+ * @param {Object} params
+ * @param {number} params.distanceKm - Distance travelled in kilometers
+ * @param {number} params.age - User's age in years
+ * @param {number} params.weightKg - User's weight in kilograms
+ * @returns {number} Estimated calories burned (kcal)
+ */
+export function calculateCaloriesBurned({ distanceKm = 0, age = 30, weightKg = 70 }) {
+  const safeDistance = typeof distanceKm === "number" && !isNaN(distanceKm) && distanceKm > 0 ? distanceKm : 0;
+  const safeWeight = typeof weightKg === "number" && !isNaN(weightKg) && weightKg > 0 ? weightKg : 70;
+  const safeAge = typeof age === "number" && !isNaN(age) && age > 0 ? age : 30;
+
+  if (safeDistance === 0) return 0;
+
+  // Base hiking energy cost (~0.95 kcal/kg/km on outdoor trail terrain)
+  // Age factor accounts for metabolic changes over time (~0.2% per year from baseline age 20)
+  const ageFactor = Math.max(0.8, Math.min(1.15, 1.0 - (safeAge - 20) * 0.002));
+  const calories = safeDistance * safeWeight * 0.95 * ageFactor;
+
+  return Math.round(calories);
+}
+
 export default function HikeSummaryPopup({
   visible,
   trail,
   seconds = 0,
   distanceKm = 0,
-  caloriesBurned = 320, // placeholder static value
+  caloriesBurned,
+  age: propAge,
+  weight: propWeight,
+  weightKg: propWeightKg,
+  isCheckingAchievements = false,
+  checkingAchievements = false,
+  disabled = false,
   onReturnHome,
 }) {
+  const isChecking = isCheckingAchievements || checkingAchievements || disabled;
+  const me = useCurrentUser();
+
+  // Resolve user weight (prop -> auth profile -> mock user -> standard default)
+  const userWeight =
+    propWeightKg ??
+    propWeight ??
+    me?.weightKg ??
+    CURRENT_USER?.currentUser?.weightKg ??
+    70;
+
+  // Resolve user age (prop -> auth profile DOB -> mock user DOB -> default 30)
+  const resolvedAge = useMemo(() => {
+    if (typeof propAge === "number" && !isNaN(propAge) && propAge > 0) return propAge;
+    const dobString = me?.dateOfBirth || CURRENT_USER?.currentUser?.dateOfBirth;
+    if (dobString) {
+      const parsed = parseDob(dobString);
+      if (parsed) return ageFromDob(parsed);
+    }
+    return 30;
+  }, [propAge, me?.dateOfBirth]);
+
+  const estimatedCalories = useMemo(() => {
+    if (typeof caloriesBurned === "number" && !isNaN(caloriesBurned)) {
+      return caloriesBurned;
+    }
+    return calculateCaloriesBurned({
+      distanceKm,
+      age: resolvedAge,
+      weightKg: userWeight,
+    });
+  }, [caloriesBurned, distanceKm, resolvedAge, userWeight]);
+
   const safeDistance = typeof distanceKm === "number" && !isNaN(distanceKm) ? distanceKm : 0;
   const stats = [
     { label: "Time Elapsed", value: formatTime(seconds) },
     { label: "Distance Travelled", value: `${safeDistance.toFixed(2)} km` },
     { label: "Trail Length", value: trail?.lengthKm ? `${trail.lengthKm} km` : "--" },
     {
-      label: "Calories Burned",
-      value: typeof caloriesBurned === "number" ? `${caloriesBurned} kcal` : caloriesBurned,
+      label: "Estimated Calories Burned",
+      value: `${estimatedCalories} kcal`,
     },
   ];
 
@@ -47,8 +114,20 @@ export default function HikeSummaryPopup({
             ))}
           </View>
 
-          <TouchableOpacity style={styles.homeBtn} onPress={onReturnHome}>
-            <Text style={styles.homeBtnText}>Return to home</Text>
+          <TouchableOpacity
+            style={[styles.homeBtn, isChecking && styles.homeBtnDisabled]}
+            onPress={onReturnHome}
+            disabled={isChecking}
+            activeOpacity={0.8}
+          >
+            {isChecking ? (
+              <View style={styles.btnLoadingRow}>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={styles.homeBtnText}>Checking achievements...</Text>
+              </View>
+            ) : (
+              <Text style={styles.homeBtnText}>Return to home</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -98,6 +177,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  homeBtnDisabled: {
+    backgroundColor: "#94a3b8",
+    opacity: 0.85,
+  },
+  btnLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   homeBtnText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
 });
