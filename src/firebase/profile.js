@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuthToken } from './token';
 
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = process.env.EXPO_PUBLIC_HIKE_API_URL;
 const cacheKey = (uid) => `profile:${uid}`;
 
 async function readCache(uid) {
