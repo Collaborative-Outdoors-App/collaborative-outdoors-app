@@ -1,10 +1,15 @@
-import { useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
-import TrendChart from '../components/TrendChart';
+
+import { useMemo, useState, useEffect } from 'react';
 import {
-  DISTANCE_TRAVELLED_TRENDS,
-  TIME_SPENT_HIKING_TRENDS,
-} from '../constants/currentUser';
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+
+import TrendChart from '../components/TrendChart';
+import { getHikes } from '../services/saveHikeService';
 
 const GREEN = '#2F5D46';
 
@@ -12,8 +17,7 @@ const STAT_OPTIONS = [
   {
     id: 'distance',
     label: 'Distance Travelled',
-    data: DISTANCE_TRAVELLED_TRENDS,
-    getValue: (d) => d.km,
+    valueKey: 'km',
     unit: 'km',
     yAxisTitle: 'Kilometres',
     formatTotal: (v) => `${v.toFixed(1)} km`,
@@ -23,8 +27,7 @@ const STAT_OPTIONS = [
   {
     id: 'hiking_time',
     label: 'Time Spent Hiking',
-    data: TIME_SPENT_HIKING_TRENDS,
-    getValue: (d) => d.minutes,
+    valueKey: 'minutes',
     unit: 'min',
     yAxisTitle: 'Minutes',
     formatTotal: (v) => `${Math.round(v)} min`,
@@ -38,11 +41,14 @@ const RANGES = [
   { label: '30 Days', days: 30 },
 ];
 
-// Index 0 is the most recent day, so daysAgo = 0 is today
-function getDateLabel(daysAgo) {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+// Format an API date (YYYY-MM-DD) for the chart tooltip.
+function getDateLabel(date) {
+  const d = new Date(`${date}T12:00:00`);
+
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 function Stat({ label, value }) {
@@ -54,31 +60,85 @@ function Stat({ label, value }) {
   );
 }
 
+function ChartSkeleton() {
+  return (
+    <View
+      style={styles.skeletonCard}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading activity chart"
+    >
+    </View>
+  );
+}
+
 export default function ActivityTrends() {
-  const [selectedStatId, setSelectedStatId] = useState(STAT_OPTIONS[0].id);
+  const [dataFetched, setDataFetched] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [selectedStatId, setSelectedStatId] = useState(
+    STAT_OPTIONS[0].id
+  );
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [range, setRange] = useState(7);
 
   const selectedStat =
-    STAT_OPTIONS.find((s) => s.id === selectedStatId) || STAT_OPTIONS[0];
+    STAT_OPTIONS.find((s) => s.id === selectedStatId) ||
+    STAT_OPTIONS[0];
 
+  // Fetch data whenever the selected metric or date range changes.
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const result = await getHikes(range, selectedStatId);
+
+        if (isActive) {
+          setDataFetched(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching hikes:', error);
+
+        if (isActive) {
+          setError(error.message || 'Unable to load activity data.');
+          setDataFetched([]);
+        }
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isActive = false;
+    };
+  }, [range, selectedStatId]);
+
+  // Convert API data into the format expected by TrendChart.
+  // The API returns dates newest first, so reverse them for the chart.
   const data = useMemo(() => {
-    const slice = selectedStat.data.slice(0, range).reverse();
-    return slice.map((d, i) => {
-      const daysAgo = slice.length - 1 - i;
-      return {
-        value: selectedStat.getValue(d),
-        date: getDateLabel(daysAgo), // shown in the tooltip only
-      };
-    });
-  }, [selectedStat, range]);
+    return [...dataFetched].reverse().map((d) => ({
+      value: d[selectedStat.valueKey] ?? 0,
+      date: getDateLabel(d.date),
+    }));
+  }, [dataFetched, selectedStat]);
 
+  // Calculate summary statistics using the fetched data.
   const stats = useMemo(() => {
     const values = data.map((d) => d.value);
+
     const total = values.reduce((sum, v) => sum + v, 0);
     const count = values.length || 1;
     const avg = total / count;
     const best = values.length ? Math.max(...values) : 0;
+
     return {
       total: selectedStat.formatTotal(total),
       average: selectedStat.formatAvg(avg),
@@ -108,9 +168,14 @@ export default function ActivityTrends() {
         >
           <View style={styles.dropdownLeft}>
             <Text style={styles.dropdownLabelText}>Statistic</Text>
-            <Text style={styles.dropdownValueText}>{selectedStat.label}</Text>
+            <Text style={styles.dropdownValueText}>
+              {selectedStat.label}
+            </Text>
           </View>
-          <Text style={styles.dropdownChevron}>{dropdownOpen ? '▲' : '▼'}</Text>
+
+          <Text style={styles.dropdownChevron}>
+            {dropdownOpen ? '▲' : '▼'}
+          </Text>
         </Pressable>
 
         {dropdownOpen && (
@@ -118,6 +183,7 @@ export default function ActivityTrends() {
             {STAT_OPTIONS.map((stat, idx) => {
               const isSelected = stat.id === selectedStat.id;
               const isLast = idx === STAT_OPTIONS.length - 1;
+
               return (
                 <Pressable
                   key={stat.id}
@@ -142,6 +208,7 @@ export default function ActivityTrends() {
                     >
                       {stat.label}
                     </Text>
+
                     <View
                       style={[
                         styles.unitBadge,
@@ -158,6 +225,7 @@ export default function ActivityTrends() {
                       </Text>
                     </View>
                   </View>
+
                   {isSelected && (
                     <Text style={styles.dropdownCheckmark}>✓</Text>
                   )}
@@ -172,16 +240,23 @@ export default function ActivityTrends() {
       <View style={styles.segment}>
         {RANGES.map((r) => {
           const active = range === r.days;
+
           return (
             <Pressable
               key={r.days}
               onPress={() => setRange(r.days)}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
-              style={[styles.segmentItem, active && styles.segmentItemActive]}
+              style={[
+                styles.segmentItem,
+                active && styles.segmentItemActive,
+              ]}
             >
               <Text
-                style={[styles.segmentText, active && styles.segmentTextActive]}
+                style={[
+                  styles.segmentText,
+                  active && styles.segmentTextActive,
+                ]}
               >
                 {r.label}
               </Text>
@@ -190,14 +265,20 @@ export default function ActivityTrends() {
         })}
       </View>
 
-      {/* Chart (key remounts it so the animation replays when the range or metric changes) */}
-      <TrendChart
-        key={`${selectedStat.id}-${range}`}
-        data={data}
-        yAxisTitle={selectedStat.yAxisTitle}
-        unit={selectedStat.unit}
-        hideDataPoints={range === 30}
-      />
+      {/* Chart */}
+      {loading ? (
+        <ChartSkeleton />
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : (
+        <TrendChart
+          key={`${selectedStat.id}-${range}`}
+          data={data}
+          yAxisTitle={selectedStat.yAxisTitle}
+          unit={selectedStat.unit}
+          hideDataPoints={range === 30}
+        />
+      )}
 
       {/* Summary */}
       <View style={styles.card}>
@@ -395,5 +476,28 @@ const styles = StyleSheet.create({
     width: 1,
     height: 32,
     backgroundColor: '#E5E7EB',
+  },
+  statusText: {
+    textAlign: 'center',
+    color: '#6B7280',
+    paddingVertical: 30,
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#B91C1C',
+    paddingVertical: 30,
+  },
+  skeletonCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    minHeight: 268,
+    justifyContent: 'center',
   },
 });

@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native build artifacts & cache
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+android/build/
+android/app/build/
+android/.gradle/
+
+# Metro
+.metro-health-check*
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# Local overrides only (keep .env so EAS build uploads it)
+.env*.local
+!.env
+
+# Typescript
+*.tsbuildinfo
+

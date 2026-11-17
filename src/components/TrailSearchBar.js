@@ -1,9 +1,18 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { View, TextInput, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
 import trailsData from "../constants/trails/trails.json";
+import { getOfflineTrails } from "../services/offlineMapService";
+import { colors } from "../styles/theme";
 
 export default function TrailSearchBar({ onSelectTrail, trails = trailsData }) {
   const [query, setQuery] = useState("");
+  const [offlineTrails, setOfflineTrails] = useState({});
+
+  useEffect(() => {
+    getOfflineTrails().then((data) => {
+      if (data) setOfflineTrails(data);
+    });
+  }, []);
 
   const filteredTrails = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -23,6 +32,11 @@ export default function TrailSearchBar({ onSelectTrail, trails = trailsData }) {
         placeholderTextColor="#94a3b8"
         value={query}
         onChangeText={setQuery}
+        onFocus={() => {
+          getOfflineTrails().then((data) => {
+            if (data) setOfflineTrails(data);
+          });
+        }}
       />
       {filteredTrails.length > 0 && (
         <FlatList
@@ -30,12 +44,22 @@ export default function TrailSearchBar({ onSelectTrail, trails = trailsData }) {
           data={filteredTrails}
           keyExtractor={(item) => String(item.trailId)}
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.item} onPress={() => handleSelect(item.trailId)}>
-              <Text style={styles.itemText}>{item.name}</Text>
-              {item.lengthKm ? <Text style={styles.itemSubtext}>{item.lengthKm} km</Text> : null}
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => {
+            const isOffline = Boolean(offlineTrails[String(item.trailId)]);
+            return (
+              <TouchableOpacity style={styles.item} onPress={() => handleSelect(item.trailId)}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemText}>{item.name}</Text>
+                  {isOffline && (
+                    <View style={styles.offlineBadge}>
+                      <Text style={styles.offlineBadgeText}>✓ Offline</Text>
+                    </View>
+                  )}
+                </View>
+                {item.lengthKm ? <Text style={styles.itemSubtext}>{item.lengthKm} km</Text> : null}
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
     </View>
@@ -62,6 +86,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#e2e8f0",
   },
-  itemText: { fontSize: 15, color: "#0f172a", fontWeight: "500" },
+  itemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  itemText: { fontSize: 15, color: "#0f172a", fontWeight: "500", flex: 1 },
   itemSubtext: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  offlineBadge: {
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  offlineBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.primary,
+  },
 });

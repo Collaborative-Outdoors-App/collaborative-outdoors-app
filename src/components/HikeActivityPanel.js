@@ -1,10 +1,17 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function HikeActivityPanel({ trail, seconds, onEndHike, onMinimize }) {
+export default function HikeActivityPanel({
+  trail,
+  seconds,
+  distanceKm = 0,
+  onEndHike,
+  onMinimize,
+}) {
   const timeStr = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  const safeDistance = typeof distanceKm === "number" && !isNaN(distanceKm) ? distanceKm : 0;
   const stats = [
     { label: "Time Elapsed", value: timeStr },
-    { label: "Distance", value: "0.00 km" },
+    { label: "Distance", value: `${safeDistance.toFixed(2)} km` },
     { label: "Trail Length", value: trail?.lengthKm ? `${trail.lengthKm} km` : "--" },
   ];
 
