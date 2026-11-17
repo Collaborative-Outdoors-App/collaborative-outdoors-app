@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useCurrentUser } from '../auth/useCurrentUser';
 import { parseDob, ageFromDob } from '../utils/age';
-import { navigationRef } from '../navigation/navigationRef';
-import { createSimulator } from './heartRateSource';
-import { createMonitor, maxHeartRate } from './overexertion';
-import { notifyOverexertion } from './notify';
+import { navigationRef } from '../utils/navigationRef';
+import { createSimulator } from '../wearable/HeartRateSource';
+import { createMonitor, maxHeartRate } from '../wearable/Overexertion';
+import { notifyOverexertion } from '../wearable/Notify';
+import ConnectingView from '../screens/ConnectingView';
 
 const DEVICE_NAME = 'Simulated Fitbit Charge 6'; 
 const MAX_ATTEMPTS = 3;
@@ -47,7 +48,9 @@ export function WearableProvider({ children }) {
       maxHr,
       onAlert: (info) => {
         notifyOverexertion(info);
-        if (navigationRef.isReady()) navigationRef.navigate('OverexertionAlert');
+        if (navigationRef.isReady()) {
+        navigationRef.navigate('OverexertionAlert', { self: true, bpm: info.bpm, pctOfMax: info.pctOfMax });
+        }
       },
     });
     sourceRef.current = createSimulator({
@@ -73,7 +76,7 @@ export function WearableProvider({ children }) {
       setTimeout(() => {
         setDevice({ name: DEVICE_NAME, via });
         startSource();
-      }, 1200)
+      }, 3000)
     );
   }, [startSource]);
 
@@ -146,6 +149,10 @@ export function WearableProvider({ children }) {
     attempt, maxAttempts: MAX_ATTEMPTS,
     connect, disconnect, simulateLoss, retry, setActivity, getSummary,
   };
+
+  if (status === 'connecting') {
+  return <ConnectingView via={"ConnectingView"} onCancel={disconnect} />;
+}
 
   return <WearableContext.Provider value={value}>{children}</WearableContext.Provider>;
 }

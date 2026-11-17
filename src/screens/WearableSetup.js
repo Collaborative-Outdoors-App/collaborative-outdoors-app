@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useState } from 'react';
 import AuthenticationButtons from '../components/AuthenticationButtons';
 import { colors, common } from '../styles/theme';
 import { CURRENT_USER as currentUserData } from '../constants/currentUser';
-
-const wearable = currentUserData.currentUser.wearableDevice;
+import { useWearable } from '../wearable/WearableContext';
 
 function Checkbox({ label, checked, onToggle }) {
   return (
@@ -15,13 +14,13 @@ function Checkbox({ label, checked, onToggle }) {
   );
 }
 
-// Wireframes 24 (Connect Wearable), 25 (Wearable Connected) and 31 (Lost Connection).
-// MOCK: 'idle' -> Connect -> 'connected'. The demo link shows the 'lost' screen.
 export default function ConnectWearableScreen({ navigation }) {
-  const [status, setStatus] = useState('idle'); // 'idle' | 'connected' | 'lost'
+  const {
+    status, device, bpm, shareWithGroup, setShareWithGroup,
+    attempt, maxAttempts, connect, disconnect, simulateLoss, retry, setActivity,
+  } = useWearable();
   const [googleFit, setGoogleFit] = useState(true);
   const [appleHealth, setAppleHealth] = useState(false);
-  const [shareWithGroup, setShareWithGroup] = useState(true);
 
   if (status === 'lost') {
     return (
@@ -30,11 +29,20 @@ export default function ConnectWearableScreen({ navigation }) {
         <Text style={styles.text}>Lost connection to your wearable</Text>
         <View style={styles.iconBox}><Text style={styles.icon}>⌚</Text></View>
         <Text style={styles.text}>Reconnecting...</Text>
-        <Text style={styles.small}>Attempt 2 of 3</Text>
-        <View style={styles.track}><View style={[styles.fill, { width: '40%' }]} /></View>
+        <Text style={styles.small}>Attempt {Math.max(attempt, 1)} of {maxAttempts}</Text>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: `${(Math.max(attempt, 1) / maxAttempts) * 100}%` }]} />
+        </View>
         <View style={styles.actions}>
-          <AuthenticationButtons title="Try Again" onPress={() => setStatus('connected')} />
-          <AuthenticationButtons title="Continue Without Wearable" variant="secondary" onPress={() => setStatus('idle')} />
+          <AuthenticationButtons title="Try Again" onPress={retry} />
+          <AuthenticationButtons
+            title="Continue Without Wearable"
+            variant="secondary"
+            onPress={() => {
+              disconnect();
+              navigation.goBack();
+            }}
+          />
         </View>
       </ScrollView>
     );
@@ -48,14 +56,14 @@ export default function ConnectWearableScreen({ navigation }) {
         <View style={[common.card, styles.deviceRow]}>
           <View style={styles.iconBoxSmall}><Text style={styles.iconSmall}>⌚</Text></View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.deviceName}>{wearable.name}</Text>
-            <Text style={styles.small}>via {wearable.provider}</Text>
+            <Text style={styles.deviceName}>{device?.name}</Text>
+            <Text style={styles.small}>via {device?.via}</Text>
           </View>
           <View style={styles.chip}><Text style={styles.chipText}>Connected</Text></View>
         </View>
 
         <View style={[common.card, styles.bpmCard]}>
-          <Text style={styles.bpm}>{wearable.heartRate}</Text>
+          <Text style={styles.bpm}>{bpm ?? '--'}</Text>
           <Text style={styles.bpmUnit}>bpm</Text>
         </View>
 
@@ -70,14 +78,23 @@ export default function ConnectWearableScreen({ navigation }) {
           </View>
         </View>
 
-        <AuthenticationButtons title="Disconnect Wearable" variant="secondary" onPress={() => setStatus('idle')} />
+        <AuthenticationButtons title="Disconnect Wearable" variant="secondary" onPress={disconnect} />
 
-        <Pressable onPress={() => setStatus('lost')}>
+        <Pressable onPress={simulateLoss}>
           <Text style={styles.demo}>Demo: show lost connection</Text>
+        </Pressable>
+        <Pressable onPress={() => setActivity('danger')}>
+          <Text style={styles.demo}>Demo: simulate overexertion</Text>
+        </Pressable>
+        <Pressable onPress={() => setActivity('rest')}>
+          <Text style={styles.demo}>Demo: back to resting</Text>
         </Pressable>
       </ScrollView>
     );
   }
+
+  const connecting = status === 'connecting';
+  const via = googleFit ? 'Google Fit' : appleHealth ? 'Apple Health' : 'Simulator';
 
   return (
     <ScrollView style={common.screen} contentContainerStyle={common.content}>
@@ -94,13 +111,13 @@ export default function ConnectWearableScreen({ navigation }) {
         <Switch value={shareWithGroup} onValueChange={setShareWithGroup} trackColor={{ true: colors.primary }} />
       </View>
 
-      <AuthenticationButtons title="Connect" onPress={() => setStatus('connected')} />
+      <AuthenticationButtons
+        title={connecting ? 'Connecting...' : 'Connect'}
+        onPress={() => !connecting && connect(via)}
+      />
       <AuthenticationButtons title="Not Now" variant="secondary" onPress={() => navigation.goBack()} />
 
-      <Pressable onPress={() => setStatus('lost')}>
-        <Text style={styles.demo}>Demo: show lost connection</Text>
-      </Pressable>
-       <Pressable onPress={() => navigation.navigate('OverexertionAlert')}>
+      <Pressable onPress={() => navigation.navigate('OverexertionAlert')}>
         <Text style={common.demoText}>Demo: show health alert</Text>
       </Pressable>
       <Pressable onPress={() => navigation.navigate('HealthDetails', { member: currentUserData.currentUser })}>
