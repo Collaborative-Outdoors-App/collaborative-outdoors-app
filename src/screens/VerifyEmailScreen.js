@@ -21,7 +21,7 @@ export default function VerifyEmailScreen({ navigation }) {
       if (auth.currentUser.emailVerified) {
         done.current = true;
         await refreshUser();
-        navigation.reset({ index: 0, routes: [{ name: 'MFA-Setup', params: { fromSignup: true } }] });
+        navigation.reset({ index: 0, routes: [{ name: 'MFASetup', params: { fromSignup: true } }] });
         return true;
       }
       if (!silent) setMsg({ type: 'error', text: 'Not verified yet. Open the link in the email, then try again.' });
