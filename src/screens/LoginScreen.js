@@ -7,8 +7,8 @@ import { common } from '../styles/theme';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import { authMessage } from '../firebase/authErrors';
-import { isMfaRequired, startSignInVerification } from '../auth/mfaSms';
 import { getProfile } from '../firebase/profile';
+import { isMfaRequired, startSignInVerification } from '../auth/mfaTotp';
 
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

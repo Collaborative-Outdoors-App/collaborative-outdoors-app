@@ -2,6 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, common } from '../styles/theme';
 import { useAuth } from '../auth/authContext';
 
+
 function Row({ label, onPress, last }) {
   return (
     <Pressable

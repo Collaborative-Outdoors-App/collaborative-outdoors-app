@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-native';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import { authMessage } from '../firebase/authErrors';
 import ActionButton from '../components/AuthenticationButtons';
@@ -38,6 +38,7 @@ export default function SignupScreen({ navigation }) {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
       await updateProfile(cred.user, { displayName: `${firstName.trim()} ${lastName.trim()}` });
+      await sendEmailVerification(cred.user).catch((e) => console.log('VERIFY EMAIL:', e.code));
       navigation.reset({index: 0,routes: [{ name: 'AboutYou', params: { firstName: firstName.trim(), lastName: lastName.trim() } }],
       });
     } catch (e) {

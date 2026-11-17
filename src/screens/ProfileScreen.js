@@ -5,6 +5,8 @@ import { auth } from '../firebase/firebaseConfig';
 import { authMessage } from '../firebase/authErrors';
 import { useAuth } from '../auth/authContext';
 import { signOut } from 'firebase/auth';
+import { useCurrentUser } from '../auth/useCurrentUser';
+import { parseDob, ageFromDob, kgToLbs } from '../utils/age';
 
 
 const GREEN = '#2F5D46';
@@ -31,7 +33,11 @@ function Stat({ label, value }) {
 
 export default function ProfileScreen({ navigation }) {
   const { user } = useAuth();
-  const profile = CURRENT_USER.currentUser; 
+  const me = useCurrentUser();
+  const dob = me.dateOfBirth ? parseDob(me.dateOfBirth) : null;
+  const ageText = me.ready && dob ? String(ageFromDob(dob)) : '—';
+  const weightText = me.ready && me.weightKg ? `${kgToLbs(me.weightKg)} lbs` : '—';
+  const groupCount = CURRENT_USER.currentUser.groupIds.length; // mock until the groups backend exists
 
   const fullName = user?.displayName || 'Hiker';
   const initials =
@@ -74,11 +80,11 @@ export default function ProfileScreen({ navigation }) {
       {/* Stats */}
       <View style={styles.card}>
         <View style={styles.statsRow}>
-          <Stat label="Age" value={getAge(profile.dateOfBirth)} />
+          <Stat label="Age" value={ageText} />
           <View style={styles.divider} />
-          <Stat label="Weight" value={`${profile.weightKg} kg`} />
+          <Stat label="Weight" value={weightText} />
           <View style={styles.divider} />
-          <Stat label="Groups" value={profile.groupIds.length} />
+          <Stat label="Groups" value={groupCount} />
         </View>
       </View>
 

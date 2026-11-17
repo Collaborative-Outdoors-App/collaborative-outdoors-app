@@ -24,6 +24,9 @@ import TwoStepSetup from "./src/screens/TwoStepSetup";
 import TwoStepVerification from "./src/screens/TwoStepVerification";
 import WearableSetup from "./src/screens/WearableSetup";
 import ForgotPasswordScreen from "./src/screens/ForgotPassword";
+import AboutYouScreen from './src/screens/AboutYouScreen';
+import EmergencyContactScreen from './src/screens/EmergencyContactScreen';
+import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 
 import { AuthProvider, useAuth } from "./src/auth/authContext";
 
@@ -62,6 +65,9 @@ function RootNavigator() {
         <Stack.Screen name="OverexertionAlert" component={OverexertionAlertScreen} />
         <Stack.Screen name="EmergencyNotified" component={EmergencyNotifiedScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name='AboutYou' component={AboutYouScreen} options={{ headerBackVisible: false }} />
+        <Stack.Screen name='EmergencyContact' component={EmergencyContactScreen} />   
+        <Stack.Screen name='VerifyEmail' component={VerifyEmailScreen} options={{ headerBackVisible: false, title: 'Verify email' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

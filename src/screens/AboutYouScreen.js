@@ -40,7 +40,7 @@ export default function AboutYouScreen({ navigation, route }) {
       <ScrollView contentContainerStyle={common.content} keyboardShouldPersistTaps='handled'>
         <Text style={common.title}>About you</Text>
         <Text style={common.subtitle}>
-          Step 1 of 2. We use your age and weight to estimate safe heart-rate limits on hikes.
+          Step 2 of 4. We use your age and weight to estimate safe heart-rate limits on hikes.
         </Text>
 
         <TextField

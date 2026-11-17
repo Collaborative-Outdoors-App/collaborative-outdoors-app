@@ -53,7 +53,7 @@ export default function EmergencyContactScreen({ navigation, route }) {
         },
         onboardingComplete: true,
       });
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'VerifyEmail' }] });
     } catch (e) {
       console.log('SAVE PROFILE ERROR:', e.message);
       setFormError('Could not save. Check your connection and try again.');
@@ -67,7 +67,7 @@ export default function EmergencyContactScreen({ navigation, route }) {
       <ScrollView contentContainerStyle={common.content} keyboardShouldPersistTaps='handled'>
         <Text style={common.title}>Emergency contact</Text>
         <Text style={common.subtitle}>
-          Step 2 of 2. We will notify this person if you or your group need help on a hike.
+          Step 3 of 4. We will notify this person if you or your group need help on a hike.
         </Text>
 
         {formError ? <Banner type='error' title='Could not save' text={formError} /> : null}
