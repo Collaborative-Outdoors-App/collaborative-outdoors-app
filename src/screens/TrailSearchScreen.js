@@ -140,6 +140,7 @@ export default function TrailSearchScreen() {
     setHikeDistanceKm(0);
     setAchievementQueue([]);
     setTotalUnlockedCount(0);
+    setSaveStatus("idle");
     lastHikePositionRef.current = null;
     navigation.navigate("Home");
   }, [navigation]);
@@ -311,6 +312,7 @@ export default function TrailSearchScreen() {
             setHikeDistanceKm(0);
             setAchievementQueue([]);
             setTotalUnlockedCount(0);
+            setSaveStatus("idle");
             lastHikePositionRef.current = currentPosition?.coords
               ? {
                   latitude: currentPosition.coords.latitude,
@@ -326,6 +328,7 @@ export default function TrailSearchScreen() {
         trail={selectedTrail}
         seconds={hikeSeconds}
         distanceKm={hikeDistanceKm}
+        isCheckingAchievements={saveStatus === "saving"}
         onReturnHome={handleReturnHome}
       />
 

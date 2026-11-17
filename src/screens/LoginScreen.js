@@ -7,6 +7,8 @@ import { common } from '../styles/theme';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import { authMessage } from '../firebase/authErrors';
+import { getProfile } from '../firebase/profile';
+import { isMfaRequired, startSignInVerification } from '../auth/mfaTotp';
 
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -24,22 +26,35 @@ export default function LoginScreen({ navigation, route }) {
   const passwordError = submitted && !password ? 'Enter your password' : '';
   
  
-   const handleLogin = async () => {
+  const handleLogin = async () => {
     if (loading) return;
-    setSubmitted(true);
-    setFormError('');
+      setSubmitted(true);
+      setFormError('');
     if (!EMAIL_PATTERN.test(email.trim()) || !password) return;
 
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-    } catch (e) {
-      setFormError(authMessage(e.code));
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+    const profile = await getProfile(cred.user.uid);
+    const needsOnboarding = profile !== null && !profile.onboardingComplete;
+    navigation.reset({ index: 0, routes: [{ name: needsOnboarding ? 'AboutYou' : 'Home' }] });
+  } catch (e) {
+    if (isMfaRequired(e)) {
+      try {
+        await startSignInVerification(e);
+        navigation.navigate('TwoStepVerification');
+      } catch (e2) {
+        console.log('MFA SIGNIN START:', e2.code, e2.message);
+        setFormError('Could not send the verification code. Please try again.');
+      }
+      return;
     }
-  };
+    console.log('LOGIN ERROR:', e.code, e.message);
+    setFormError(authMessage(e.code));
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   return (

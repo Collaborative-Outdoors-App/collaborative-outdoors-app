@@ -1,54 +1,45 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import ActionButton from '../components/AuthenticationButtons';
 import Banner from '../components/MessageBanner';
 import TextField from '../components/InputTexts';
 import { common } from '../styles/theme';
+import { getProfile } from '../firebase/profile';
+import { finishSignIn } from '../auth/mfaTotp';
 
-export default function TwoStepScreen({ navigation }) {
+export default function TwoStepVerification({ navigation }) {
   const [code, setCode] = useState('');
-  const [error, setError] = useState('');
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleVerify = () => {
-    if (code.length !== 6) {
-      setError('Enter the 6 digit code.');
+  const verify = async () => {
+    if (busy) return;
+    if (code.trim().length !== 6) {
+      setMsg({ type: 'error', text: 'Enter the 6-digit code.' });
       return;
     }
-    if (code === '000000') {
-      setError('That code is not correct. Try again.');
-      return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const user = await finishSignIn(code.trim());
+      const profile = await getProfile(user.uid);
+      const needsOnboarding = profile !== null && !profile.onboardingComplete;
+      navigation.reset({ index: 0, routes: [{ name: needsOnboarding ? 'AboutYou' : 'Home' }] });
+    } catch (e) {
+      console.log('MFA SIGNIN CONFIRM:', e.code, e.message);
+      setMsg({ type: 'error', text: 'That code was not accepted. Wait for a new code and try again.' });
+    } finally {
+      setBusy(false);
     }
-    navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
   };
 
   return (
-    <KeyboardAvoidingView style={common.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={common.content} keyboardShouldPersistTaps="handled">
-        <Text style={common.title}>Check your phone</Text>
-        <Text style={common.subtitle}>We sent a 6 digit code to your phone ending in 0199.</Text>
-
-        {error ? <Banner type="error" text={error} /> : null}
-
-        <TextField
-          label="Verification code"
-          value={code}
-          onChangeText={(t) => {
-            setCode(t.replace(/\D/g, '').slice(0, 6));
-            setError('');
-          }}
-          placeholder="000000"
-          keyboardType="number-pad"
-          maxLength={6}
-          inputStyle={{ fontSize: 22, letterSpacing: 6 }}
-        />
-
-        <ActionButton title="Verify" onPress={handleVerify} />
-        <ActionButton
-          title="Resend code"
-          variant="ghost"
-          onPress={() => Alert.alert('Code sent', 'A new code is on its way.')}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <ScrollView contentContainerStyle={common.content} keyboardShouldPersistTaps='handled'>
+      <Text style={common.title}>Enter your code</Text>
+      <Text style={common.subtitle}>Open your authenticator app and enter the 6-digit code for Collaborative Outdoors.</Text>
+      {msg ? <Banner type={msg.type} title='Problem' text={msg.text} /> : null}
+      <TextField label='Code' value={code} onChangeText={setCode} placeholder='123456' keyboardType='number-pad' />
+      <ActionButton title={busy ? 'Checking...' : 'Verify'} onPress={verify} />
+    </ScrollView>
   );
 }

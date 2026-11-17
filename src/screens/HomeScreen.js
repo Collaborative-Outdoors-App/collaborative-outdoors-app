@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import { useAuth } from '../auth/authContext';
 import { clearMapCache } from '../services/offlineMapService';
 
+
 const GREEN = '#2F5D46';
 
 function getGreeting() {
