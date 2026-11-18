@@ -93,6 +93,7 @@ export function WearableProvider({ children }) {
     setDevice(null);
     setBpm(null);
     setAttempt(0);
+    clearTimeout(dangerTimerRef.current);
   }, []);
 
   const setHeartRateAccess = useCallback(
@@ -135,7 +136,16 @@ export function WearableProvider({ children }) {
     runReconnect();
   }, [runReconnect]);
 
-  const setActivity = useCallback((mode) => sourceRef.current?.setMode(mode), []);
+   const dangerTimerRef = useRef(null);
+
+  const setActivity = useCallback((mode) => {
+    clearTimeout(dangerTimerRef.current);
+    sourceRef.current?.setMode(mode);
+    if (mode === 'danger') {
+      // simulator safety: drop back to rest after 45 seconds
+      dangerTimerRef.current = setTimeout(() => sourceRef.current?.setMode('rest'), 45000);
+    }
+  }, []);
 
   const getSummary = useCallback(() => {
     const s = samplesRef.current;
