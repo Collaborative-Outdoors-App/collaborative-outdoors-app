@@ -27,7 +27,8 @@ import ForgotPasswordScreen from "./src/screens/ForgotPassword";
 import AboutYouScreen from './src/screens/AboutYouScreen';
 import EmergencyContactScreen from './src/screens/EmergencyContactScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
-
+import { WearableProvider } from './src/wearable/WearableContext';
+import { navigationRef } from './src/utils/navigationRef';
 import { AuthProvider, useAuth } from "./src/auth/authContext";
 
 const Stack = createNativeStackNavigator();
@@ -37,7 +38,7 @@ function RootNavigator() {
   if (checking) return null;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName={user ? "Home" : "Login"}
         screenOptions={{
@@ -76,8 +77,10 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
+      <WearableProvider>
       <StatusBar style="auto" />
       <RootNavigator />
+      </WearableProvider>
     </AuthProvider>
   );
 }

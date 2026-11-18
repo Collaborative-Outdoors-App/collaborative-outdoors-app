@@ -1,10 +1,9 @@
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import AuthenticationButtons from '../components/AuthenticationButtons';
 import { colors, common } from '../styles/theme';
-import { CURRENT_USER as currentUserData } from '../constants/currentUser';
-
-const wearable = currentUserData.currentUser.wearableDevice;
+import { useWearable } from '../wearable/WearableContext';
+import ConnectingView from '../screens/ConnectingView';
 
 function Checkbox({ label, checked, onToggle }) {
   return (
@@ -15,13 +14,19 @@ function Checkbox({ label, checked, onToggle }) {
   );
 }
 
-// Wireframes 24 (Connect Wearable), 25 (Wearable Connected) and 31 (Lost Connection).
-// MOCK: 'idle' -> Connect -> 'connected'. The demo link shows the 'lost' screen.
 export default function ConnectWearableScreen({ navigation }) {
-  const [status, setStatus] = useState('idle'); // 'idle' | 'connected' | 'lost'
-  const [googleFit, setGoogleFit] = useState(true);
-  const [appleHealth, setAppleHealth] = useState(false);
-  const [shareWithGroup, setShareWithGroup] = useState(true);
+  const {
+    status, device, bpm, shareWithGroup, setShareWithGroup,
+    heartRateAccess, setHeartRateAccess,
+    attempt, maxAttempts, connect, disconnect, simulateLoss, retry, setActivity,
+  } = useWearable();
+  const [source, setSource] = useState(
+    Platform.OS === 'ios' ? 'Apple Health' : 'Health Connect'
+  );
+
+  if (status === 'connecting') {
+    return <ConnectingView via={source} onCancel={disconnect} />;
+  }
 
   if (status === 'lost') {
     return (
@@ -30,11 +35,20 @@ export default function ConnectWearableScreen({ navigation }) {
         <Text style={styles.text}>Lost connection to your wearable</Text>
         <View style={styles.iconBox}><Text style={styles.icon}>⌚</Text></View>
         <Text style={styles.text}>Reconnecting...</Text>
-        <Text style={styles.small}>Attempt 2 of 3</Text>
-        <View style={styles.track}><View style={[styles.fill, { width: '40%' }]} /></View>
+        <Text style={styles.small}>Attempt {Math.max(attempt, 1)} of {maxAttempts}</Text>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: `${(Math.max(attempt, 1) / maxAttempts) * 100}%` }]} />
+        </View>
         <View style={styles.actions}>
-          <AuthenticationButtons title="Try Again" onPress={() => setStatus('connected')} />
-          <AuthenticationButtons title="Continue Without Wearable" variant="secondary" onPress={() => setStatus('idle')} />
+          <AuthenticationButtons title="Try Again" onPress={retry} />
+          <AuthenticationButtons
+            title="Continue Without Wearable"
+            variant="secondary"
+            onPress={() => {
+              disconnect();
+              navigation.goBack();
+            }}
+          />
         </View>
       </ScrollView>
     );
@@ -48,21 +62,21 @@ export default function ConnectWearableScreen({ navigation }) {
         <View style={[common.card, styles.deviceRow]}>
           <View style={styles.iconBoxSmall}><Text style={styles.iconSmall}>⌚</Text></View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.deviceName}>{wearable.name}</Text>
-            <Text style={styles.small}>via {wearable.provider}</Text>
+            <Text style={styles.deviceName}>{device?.name}</Text>
+            <Text style={styles.small}>via {device?.via}</Text>
           </View>
           <View style={styles.chip}><Text style={styles.chipText}>Connected</Text></View>
         </View>
 
         <View style={[common.card, styles.bpmCard]}>
-          <Text style={styles.bpm}>{wearable.heartRate}</Text>
+          <Text style={styles.bpm}>{bpm ?? '--'}</Text>
           <Text style={styles.bpmUnit}>bpm</Text>
         </View>
 
         <View style={[common.card, { gap: 14 }]}>
           <View style={styles.row}>
             <Text style={styles.label}>Heart rate access</Text>
-            <Text style={styles.value}>Allowed</Text>
+            <Switch value={heartRateAccess} onValueChange={setHeartRateAccess} trackColor={{ true: colors.primary }} />
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Share with group</Text>
@@ -70,10 +84,16 @@ export default function ConnectWearableScreen({ navigation }) {
           </View>
         </View>
 
-        <AuthenticationButtons title="Disconnect Wearable" variant="secondary" onPress={() => setStatus('idle')} />
+        <AuthenticationButtons title="Disconnect Wearable" variant="secondary" onPress={disconnect} />
 
-        <Pressable onPress={() => setStatus('lost')}>
+        <Pressable onPress={simulateLoss}>
           <Text style={styles.demo}>Demo: show lost connection</Text>
+        </Pressable>
+        <Pressable onPress={() => setActivity('danger')}>
+          <Text style={styles.demo}>Demo: simulate overexertion</Text>
+        </Pressable>
+        <Pressable onPress={() => setActivity('rest')}>
+          <Text style={styles.demo}>Demo: back to resting</Text>
         </Pressable>
       </ScrollView>
     );
@@ -85,27 +105,35 @@ export default function ConnectWearableScreen({ navigation }) {
       <Text style={styles.text}>Choose where your heart rate comes from</Text>
 
       <View style={{ gap: 14 }}>
-        <Checkbox label="Google Fit" checked={googleFit} onToggle={() => setGoogleFit((v) => !v)} />
-        <Checkbox label="Apple Health" checked={appleHealth} onToggle={() => setAppleHealth((v) => !v)} />
+        <Checkbox
+          label="Health Connect (Android)"
+          checked={source === 'Health Connect'}
+          onToggle={() => setSource('Health Connect')}
+        />
+        <Checkbox
+          label="Apple Health (iPhone)"
+          checked={source === 'Apple Health'}
+          onToggle={() => setSource('Apple Health')}
+        />
       </View>
 
-      <View style={[common.card, styles.row]}>
-        <Text style={styles.label}>Share heart rate with group</Text>
-        <Switch value={shareWithGroup} onValueChange={setShareWithGroup} trackColor={{ true: colors.primary }} />
+      <View style={[common.card, { gap: 14 }]}>
+        <View style={styles.row}>
+          <Text style={styles.label}>Allow heart rate access</Text>
+          <Switch value={heartRateAccess} onValueChange={setHeartRateAccess} trackColor={{ true: colors.primary }} />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Share heart rate with group</Text>
+          <Switch value={shareWithGroup} onValueChange={setShareWithGroup} trackColor={{ true: colors.primary }} />
+        </View>
       </View>
 
-      <AuthenticationButtons title="Connect" onPress={() => setStatus('connected')} />
+      {!heartRateAccess ? (
+        <Text style={styles.small}>Turn on heart rate access to connect.</Text>
+      ) : null}
+
+      <AuthenticationButtons title="Connect" onPress={() => heartRateAccess && connect(source)} />
       <AuthenticationButtons title="Not Now" variant="secondary" onPress={() => navigation.goBack()} />
-
-      <Pressable onPress={() => setStatus('lost')}>
-        <Text style={styles.demo}>Demo: show lost connection</Text>
-      </Pressable>
-       <Pressable onPress={() => navigation.navigate('OverexertionAlert')}>
-        <Text style={common.demoText}>Demo: show health alert</Text>
-      </Pressable>
-      <Pressable onPress={() => navigation.navigate('HealthDetails', { member: currentUserData.currentUser })}>
-        <Text style={common.demoText}>Demo: show member health</Text>
-      </Pressable>
     </ScrollView>
   );
 }
@@ -131,7 +159,6 @@ const styles = StyleSheet.create({
   bpmUnit: { fontSize: 18, color: colors.stone },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   label: { flex: 1, fontSize: 15, color: colors.ink },
-  value: { fontSize: 15, fontWeight: '600', color: colors.primary },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: colors.stone, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   boxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
