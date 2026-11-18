@@ -11,15 +11,32 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const hasFirebaseConfig = Object.values(firebaseConfig).every(
+  (value) => typeof value === 'string' && value.trim().length > 0,
+);
 
-let authInstance;
-try {
-  authInstance = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-  });
-} catch (e) {
-  authInstance = getAuth(app);
+let authInstance = null;
+let authConfigurationError = '';
+
+if (hasFirebaseConfig) {
+  try {
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    try {
+      authInstance = initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage),
+      });
+    } catch {
+      authInstance = getAuth(app);
+    }
+  } catch (error) {
+    authConfigurationError =
+      'Firebase Authentication could not initialize. Check the Firebase values in .env and restart the app.';
+    console.error(authConfigurationError, error);
+  }
+} else {
+  authConfigurationError =
+    'Firebase Authentication is not configured. Add the Firebase values to .env and restart the app.';
 }
 
 export const auth = authInstance;
+export { authConfigurationError };

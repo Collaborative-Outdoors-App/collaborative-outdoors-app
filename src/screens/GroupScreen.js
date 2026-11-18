@@ -11,6 +11,12 @@ import {
 } from "react-native";
 import { GROUPS } from "../constants/groups";
 import { CURRENT_USER } from "../constants/currentUser";
+import { auth } from "../firebase/firebaseConfig";
+import {
+  createRemoteGroup,
+  getRemoteGroups,
+  isGroupChatApiConfigured,
+} from "../services/groupChatService";
 
 const STORAGE_KEY = "outdoor-collaborative-groups-v1";
 const CHAT_STORAGE_KEY = "outdoor-collaborative-group-chats-v1";
@@ -37,20 +43,41 @@ export default function GroupScreen({ navigation }) {
   const [removalConfirmation, setRemovalConfirmation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const signedInUserId = auth?.currentUser?.uid || CURRENT_USER.currentUser.userId;
+  const signedInName = auth?.currentUser?.displayName || `${CURRENT_USER.currentUser.firstName} ${CURRENT_USER.currentUser.lastName}`;
+  const signedInNameParts = signedInName.trim().split(/\s+/);
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.groupId === selectedGroupId) || null,
     [groups, selectedGroupId],
   );
   const currentUserRole = selectedGroup?.members.find(
-    (member) => member.userId === CURRENT_USER.currentUser.userId,
-  )?.role;
+    (member) => member.userId === signedInUserId,
+  )?.role || selectedGroup?.role;
   const canManageGroup = currentUserRole === "owner" || currentUserRole === "admin";
 
   useEffect(() => {
     let isMounted = true;
     async function loadGroups() {
       try {
+        if (isGroupChatApiConfigured()) {
+          const response = await getRemoteGroups();
+          const remoteGroups = (Array.isArray(response.groups) ? response.groups : []).map((group) => ({
+            groupId: group.groupId,
+            name: group.name,
+            role: group.role,
+            createdDate: group.createdAt || group.joinedAt,
+            members: [],
+            invitations: [],
+            messages: [],
+          }));
+          if (isMounted) {
+            setGroups(remoteGroups);
+            setSelectedGroupId(remoteGroups[0]?.groupId || null);
+          }
+          return;
+        }
+
         const storedValue = await AsyncStorage.getItem(STORAGE_KEY);
         if (!storedValue) return;
         const storedGroups = JSON.parse(storedValue);
@@ -62,7 +89,11 @@ export default function GroupScreen({ navigation }) {
           setSelectedGroupId(storedGroups[0]?.groupId || null);
         }
       } catch {
-        if (isMounted) setError("Saved groups could not be loaded. Existing groups are shown for this session.");
+        if (isMounted) {
+          setError(isGroupChatApiConfigured()
+            ? "Groups could not be loaded from AWS. Check your connection, API URL, and sign-in."
+            : "Saved groups could not be loaded. Existing groups are shown for this session.");
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -74,6 +105,11 @@ export default function GroupScreen({ navigation }) {
   }, []);
 
   async function saveGroups(nextGroups) {
+    if (isGroupChatApiConfigured()) {
+      setError("AWS group chat currently supports group creation and messaging. Invitations, role changes, member removal, and deletion are not connected yet.");
+      throw new Error("Group management API routes are not configured.");
+    }
+
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextGroups));
       setGroups(nextGroups);
@@ -91,23 +127,39 @@ export default function GroupScreen({ navigation }) {
       return;
     }
     const user = CURRENT_USER.currentUser;
+    let remoteGroup;
+    if (isGroupChatApiConfigured()) {
+      try {
+        const response = await createRemoteGroup(name);
+        remoteGroup = response.group;
+      } catch {
+        setError("The group could not be created on AWS. Check your connection and group chat API configuration.");
+        return;
+      }
+    }
+
     const newGroup = {
-      groupId: `g-${Date.now()}`,
+      groupId: remoteGroup?.groupId || `g-${Date.now()}`,
       name,
-      createdDate: new Date().toISOString(),
+      createdDate: remoteGroup?.createdAt || new Date().toISOString(),
       members: [{
-        userId: user.userId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: "owner",
+        userId: signedInUserId,
+        firstName: signedInNameParts[0] || user.firstName,
+        lastName: signedInNameParts.slice(1).join(" ") || user.lastName,
+        email: auth?.currentUser?.email || user.email,
+        role: remoteGroup?.role || "owner",
         dateJoined: new Date().toISOString(),
       }],
       invitations: [],
       messages: [],
     };
     try {
-      await saveGroups([...groups, newGroup]);
+      if (isGroupChatApiConfigured()) {
+        setGroups([...groups, newGroup]);
+        setError("");
+      } else {
+        await saveGroups([...groups, newGroup]);
+      }
       setSelectedGroupId(newGroup.groupId);
       setNewGroupName("");
       setShowCreateForm(false);
@@ -331,7 +383,9 @@ export default function GroupScreen({ navigation }) {
                   <View style={styles.groupCopy}>
                     <Text style={styles.groupName}>{group.name}</Text>
                     <Text style={styles.memberCount}>
-                      {group.members.length} members · Chat and itinerary
+                      {group.members.length
+                        ? `${group.members.length} members · Chat and itinerary`
+                        : isGroupChatApiConfigured() ? "AWS group chat" : "Chat and itinerary"}
                     </Text>
                   </View>
                   <Text style={styles.chevron}>›</Text>
@@ -358,7 +412,9 @@ export default function GroupScreen({ navigation }) {
             <View style={styles.note}>
               <Text style={styles.noteTitle}>Plan together</Text>
               <Text style={styles.noteText}>
-                Groups, invitations, roles, messages, and itineraries are saved on this device only.
+                {isGroupChatApiConfigured()
+                  ? "Groups and messages sync with AWS. Invitations, role changes, member removal, deletion, and itineraries are not connected yet."
+                  : "Groups, invitations, roles, messages, and itineraries are saved on this device only."}
               </Text>
             </View>
           </>
@@ -396,8 +452,15 @@ export default function GroupScreen({ navigation }) {
               <>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Members and roles</Text>
-                  <Text style={styles.memberCount}>{selectedGroup.members.length} members</Text>
+                  <Text style={styles.memberCount}>
+                    {isGroupChatApiConfigured() ? "AWS chat" : `${selectedGroup.members.length} members`}
+                  </Text>
                 </View>
+                {isGroupChatApiConfigured() && (
+                  <View style={styles.permissionNote}>
+                    <Text style={styles.emptyText}>AWS chat is connected, but the member-list endpoint is not implemented yet.</Text>
+                  </View>
+                )}
                 {!canManageGroup && (
                   <View style={styles.permissionNote}>
                     <Text style={styles.emptyText}>Only group owners and admins can change roles or manage invitations.</Text>
@@ -405,7 +468,7 @@ export default function GroupScreen({ navigation }) {
                 )}
                 {selectedGroup.members.map((member) => {
                   const fullName = `${member.firstName} ${member.lastName}`.trim();
-                  const isCurrentUser = member.userId === CURRENT_USER.currentUser.userId;
+                  const isCurrentUser = member.userId === signedInUserId;
                   const isOwner = member.role === "owner";
                   return (
                     <View key={member.userId} style={styles.memberCard}>

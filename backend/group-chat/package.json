@@ -1,0 +1,18 @@
+{
+  "name": "collaborative-outdoors-group-chat",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.883.0",
+    "@aws-sdk/lib-dynamodb": "^3.883.0",
+    "esbuild": "^0.28.2",
+    "jose": "^5.9.6"
+  }
+}

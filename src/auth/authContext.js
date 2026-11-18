@@ -20,6 +20,10 @@ export function AuthProvider({ children }) {
   const refreshUser = () => setVersion((v) => v + 1);
 
   useEffect(() => {
+    if (!auth) {
+      setChecking(false);
+      return undefined;
+    }
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setChecking(false);

@@ -5,7 +5,7 @@ import Banner from '../components/MessageBanner';
 import TextField from '../components/InputTexts';
 import { common } from '../styles/theme';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/firebaseConfig';
+import { auth, authConfigurationError } from '../firebase/firebaseConfig';
 import { authMessage } from '../firebase/authErrors';
 import { getProfile } from '../firebase/profile';
 import { isMfaRequired, startSignInVerification } from '../auth/mfaTotp';
@@ -31,6 +31,8 @@ export default function LoginScreen({ navigation, route }) {
       setSubmitted(true);
       setFormError('');
     if (!EMAIL_PATTERN.test(email.trim()) || !password) return;
+
+    if (!auth) return;
 
   setLoading(true);
   try {
@@ -63,6 +65,9 @@ export default function LoginScreen({ navigation, route }) {
         <Text style={common.title}>Welcome back</Text>
         
 
+        {authConfigurationError ? (
+          <Banner type="error" title="Authentication unavailable" text={authConfigurationError} />
+        ) : null}
         {route?.params?.expired ? (
           <Banner type="warning" title="Session expired" text="For your security, please log in again." />
         ) : null}

@@ -13,6 +13,12 @@ import {
 } from "react-native";
 import { GROUPS } from "../constants/groups";
 import { CURRENT_USER } from "../constants/currentUser";
+import { auth } from "../firebase/firebaseConfig";
+import {
+  getGroupMessages,
+  isGroupChatApiConfigured,
+  sendGroupMessage,
+} from "../services/groupChatService";
 
 const STORAGE_KEY = "outdoor-collaborative-group-chats-v1";
 
@@ -36,7 +42,9 @@ export default function GroupChatScreen({ route }) {
   const [itineraryMeetingPoint, setItineraryMeetingPoint] = useState("");
   const [itineraryNotes, setItineraryNotes] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const currentUserId = auth?.currentUser?.uid || CURRENT_USER.currentUser.userId;
   const scrollRef = useRef(null);
   const groupDataRef = useRef(groupData);
   const writeQueueRef = useRef(Promise.resolve());
@@ -46,21 +54,36 @@ export default function GroupChatScreen({ route }) {
     async function loadGroupData() {
       try {
         const savedValue = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!savedValue) return;
-        const savedGroups = JSON.parse(savedValue);
-        const savedGroup = savedGroups?.[groupId];
-        if (savedGroup && isMounted) {
+        const savedGroups = savedValue ? JSON.parse(savedValue) : {};
+        const savedGroup = savedGroups?.[groupId] || {};
+        const itinerary = savedGroup.itinerary && typeof savedGroup.itinerary === "object"
+          ? savedGroup.itinerary
+          : null;
+
+        if (isGroupChatApiConfigured()) {
+          const response = await getGroupMessages(groupId);
+          if (isMounted) {
+            const loadedData = {
+              messages: Array.isArray(response.messages) ? response.messages : [],
+              itinerary,
+            };
+            groupDataRef.current = loadedData;
+            setGroupData(loadedData);
+          }
+        } else if (isMounted) {
           const loadedData = {
             messages: Array.isArray(savedGroup.messages) ? savedGroup.messages : [],
-            itinerary: savedGroup.itinerary && typeof savedGroup.itinerary === "object"
-              ? savedGroup.itinerary
-              : null,
+            itinerary,
           };
           groupDataRef.current = loadedData;
           setGroupData(loadedData);
         }
       } catch {
-        if (isMounted) setError("Saved group data could not be read. New changes may replace corrupted data.");
+        if (isMounted) {
+          setError(isGroupChatApiConfigured()
+            ? "Group messages could not be loaded from AWS. Check your connection, API URL, and group membership."
+            : "Saved group data could not be read. New changes may replace corrupted data.");
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -103,6 +126,38 @@ export default function GroupChatScreen({ route }) {
   }
 
   async function appendMessage(text) {
+    if (isGroupChatApiConfigured()) {
+      const response = await sendGroupMessage(groupId, text);
+      const message = response.message;
+      if (!message?.messageId) {
+        throw new Error("The group chat API returned an invalid message.");
+      }
+      const currentData = groupDataRef.current;
+      await persistGroupData({
+        ...currentData,
+        messages: [...currentData.messages, message],
+      });
+      return;
+    }
+
+    async function handleRefreshMessages() {
+      if (!isGroupChatApiConfigured() || isRefreshing) return;
+      setIsRefreshing(true);
+      try {
+        const response = await getGroupMessages(groupId);
+        const currentData = groupDataRef.current;
+        const messages = Array.isArray(response.messages) ? response.messages : [];
+        const nextData = { ...currentData, messages };
+        groupDataRef.current = nextData;
+        setGroupData(nextData);
+        setError("");
+      } catch {
+        setError("New messages could not be loaded from AWS. Check your connection.");
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+
     const message = {
       messageId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId: CURRENT_USER.currentUser.userId,
@@ -126,7 +181,9 @@ export default function GroupChatScreen({ route }) {
       await appendMessage(message);
     } catch {
       setDraft(message);
-      setError("Message could not be saved on this device. Please try again.");
+      setError(isGroupChatApiConfigured()
+        ? "Message could not be sent to AWS. Check your connection and group membership."
+        : "Message could not be saved on this device. Please try again.");
     }
   }
 
@@ -161,15 +218,22 @@ export default function GroupChatScreen({ route }) {
           text: details,
           sentTime: new Date().toISOString(),
         };
-        await persistGroupData({
-          itinerary,
-          messages: [...currentData.messages, message],
-        });
+        if (isGroupChatApiConfigured()) {
+          await persistGroupData({ ...currentData, itinerary });
+          await appendMessage(details);
+        } else {
+          await persistGroupData({
+            itinerary,
+            messages: [...currentData.messages, message],
+          });
+        }
       } else {
         await persistGroupData({ ...currentData, itinerary });
       }
     } catch {
-      setError("The itinerary could not be saved on this device. Please try again.");
+      setError(isGroupChatApiConfigured()
+        ? "The itinerary is saved locally, but its proposal could not be sent to AWS chat."
+        : "The itinerary could not be saved on this device. Please try again.");
     }
   }
 
@@ -214,8 +278,23 @@ export default function GroupChatScreen({ route }) {
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <View style={styles.groupHeader}>
-        <Text style={styles.groupName}>{group.name}</Text>
-        <Text style={styles.memberCount}>{group.members.length} group members</Text>
+        <View>
+          <Text style={styles.groupName}>{group.name}</Text>
+          <Text style={styles.memberCount}>
+            {group.members?.length
+              ? `${group.members.length} group members`
+              : isGroupChatApiConfigured() ? "AWS group chat" : "Group chat"}
+          </Text>
+        </View>
+        {isGroupChatApiConfigured() && (
+          <TouchableOpacity
+            onPress={handleRefreshMessages}
+            disabled={isRefreshing}
+            accessibilityRole="button"
+          >
+            <Text style={styles.refreshText}>{isRefreshing ? "Refreshing…" : "Refresh chat"}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.tabs}>
@@ -254,7 +333,7 @@ export default function GroupChatScreen({ route }) {
             keyboardShouldPersistTaps="handled"
           >
             {groupData.messages.length ? groupData.messages.map((message) => {
-              const isMine = message.userId === CURRENT_USER.currentUser.userId;
+              const isMine = message.userId === currentUserId;
               return (
                 <View key={message.messageId} style={[styles.messageRow, isMine && styles.myMessageRow]}>
                   <View style={[styles.messageBubble, isMine ? styles.myMessageBubble : styles.otherMessageBubble]}>
@@ -365,7 +444,7 @@ export default function GroupChatScreen({ route }) {
               <Text style={styles.secondaryButtonText}>Share in group chat</Text>
             </TouchableOpacity>
           )}
-          <Text style={styles.localNotice}>This itinerary is saved on this device only.</Text>
+          <Text style={styles.localNotice}>Itineraries are saved on this device only.</Text>
         </ScrollView>
       )}
     </KeyboardAvoidingView>
@@ -376,9 +455,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F4F6F5" },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#F4F6F5" },
   loadingText: { marginTop: 12, color: "#647067" },
-  groupHeader: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14 },
+  groupHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14 },
   groupName: { color: "#17211b", fontSize: 22, fontWeight: "700" },
   memberCount: { marginTop: 4, color: "#647067", fontSize: 13 },
+  refreshText: { color: "#2F5D46", fontSize: 13, fontWeight: "700" },
   tabs: { flexDirection: "row", paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: "#dce4de" },
   tab: { marginRight: 24, paddingBottom: 11, borderBottomWidth: 2, borderBottomColor: "transparent" },
   activeTab: { borderBottomColor: "#2F5D46" },
