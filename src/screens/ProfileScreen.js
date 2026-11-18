@@ -37,7 +37,7 @@ export default function ProfileScreen({ navigation }) {
   const dob = me.dateOfBirth ? parseDob(me.dateOfBirth) : null;
   const ageText = me.ready && dob ? String(ageFromDob(dob)) : '—';
   const weightText = me.ready && me.weightKg ? `${kgToLbs(me.weightKg)} lbs` : '—';
-  const groupCount = CURRENT_USER.currentUser.groupIds.length; // mock until the groups backend exists
+  const groupCount = 0; // mock until the groups backend exists
 
   const fullName = user?.displayName || 'Hiker';
   const initials =
