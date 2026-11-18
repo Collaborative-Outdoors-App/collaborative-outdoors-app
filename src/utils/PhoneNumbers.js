@@ -1,0 +1,1 @@
+export const toE164 = (digits) => (digits.length === 10 ? `+1${digits}` : `+${digits}`);

@@ -1,16 +1,32 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { CURRENT_USER, ACHIEVEMENT_DATA } from '../constants/currentUser';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+  TouchableOpacity,
+} from 'react-native';
+import { getAchievements } from '../services/achievementService';
 
 const GREEN = '#2F5D46';
 const GOLD = '#F5B301';
 
+function formatNumber(num, maxDecimals = 1) {
+  if (num == null || isNaN(num)) return '0';
+  if (Number.isInteger(num)) return String(num);
+  return Number(num.toFixed(maxDecimals)).toString();
+}
+
 function ProgressBar({ progress, unlocked }) {
+  const percent = Math.min(Math.max(Math.round(progress * 100), 0), 100);
   return (
     <View style={styles.track}>
       <View
         style={[
           styles.fill,
-          { width: `${Math.round(progress * 100)}%` },
+          { width: `${percent}%` },
           unlocked && styles.fillUnlocked,
         ]}
       />
@@ -18,10 +34,50 @@ function ProgressBar({ progress, unlocked }) {
   );
 }
 
-function AchievementRow({ achievement, unlockDate, totalDistance, isLast }) {
+function AchievementRow({ achievement, unlockDate, stats, isLast }) {
   const unlocked = Boolean(unlockDate);
-  const progress = Math.min(totalDistance / achievement.requirement, 1);
-  const remaining = Math.max(achievement.requirement - totalDistance, 0);
+  const requirement = achievement.requirement || 1;
+  const metric = achievement.metric;
+
+  let current = 0;
+  let progressText = '';
+  let remainingText = '';
+
+  if (metric === 'distance') {
+    current = stats?.totalDistanceKm ?? 0;
+    const capped = unlocked ? requirement : Math.min(current, requirement);
+    const remaining = Math.max(requirement - current, 0);
+    progressText = `${formatNumber(capped)} / ${formatNumber(requirement)} km`;
+    remainingText = `${formatNumber(remaining)} km to go`;
+  } else if (metric === 'hike_count') {
+    current = stats?.hikeCount ?? 0;
+    const capped = unlocked ? requirement : Math.min(current, requirement);
+    const remaining = Math.max(requirement - current, 0);
+    const unit = requirement === 1 ? 'hike' : 'hikes';
+    const remUnit = remaining === 1 ? 'hike' : 'hikes';
+    progressText = `${formatNumber(capped)} / ${formatNumber(requirement)} ${unit}`;
+    remainingText = `${formatNumber(remaining)} ${remUnit} to go`;
+  } else if (metric === 'hiking_time') {
+    current = stats?.totalDurationMins ?? 0;
+    const capped = unlocked ? requirement : Math.min(current, requirement);
+    const remaining = Math.max(requirement - current, 0);
+    const unit = requirement === 1 ? 'min' : 'mins';
+    const remUnit = remaining === 1 ? 'min' : 'mins';
+    progressText = `${formatNumber(capped)} / ${formatNumber(requirement)} ${unit}`;
+    remainingText = `${formatNumber(remaining)} ${remUnit} to go`;
+  } else {
+    current = stats?.totalDistanceKm ?? 0;
+    const capped = unlocked ? requirement : Math.min(current, requirement);
+    const remaining = Math.max(requirement - current, 0);
+    progressText = `${formatNumber(capped)} / ${formatNumber(requirement)}`;
+    remainingText = `${formatNumber(remaining)} to go`;
+  }
+
+  const progress = unlocked ? 1 : Math.min(Math.max(current / requirement, 0), 1);
+  const formattedDate =
+    typeof unlockDate === 'string' && unlockDate.includes('T')
+      ? unlockDate.split('T')[0]
+      : unlockDate;
 
   return (
     <View style={[styles.row, !isLast && styles.rowBorder]}>
@@ -45,12 +101,9 @@ function AchievementRow({ achievement, unlockDate, totalDistance, isLast }) {
         <ProgressBar progress={progress} unlocked={unlocked} />
 
         <View style={styles.progressRow}>
-          <Text style={styles.progressText}>
-            {Math.min(totalDistance, achievement.requirement).toFixed(1)} /{' '}
-            {achievement.requirement} km
-          </Text>
+          <Text style={styles.progressText}>{progressText}</Text>
           <Text style={[styles.status, unlocked && styles.statusUnlocked]}>
-            {unlocked ? `Unlocked: ${unlockDate}` : `${remaining.toFixed(1)} km to go`}
+            {unlocked ? `Unlocked: ${formattedDate || ''}` : remainingText}
           </Text>
         </View>
       </View>
@@ -59,34 +112,103 @@ function AchievementRow({ achievement, unlockDate, totalDistance, isLast }) {
 }
 
 export default function Achievements() {
-  const user = CURRENT_USER.currentUser;
-  const totalDistance = user.totalDistance;
+  const [achievements, setAchievements] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [unlockedList, setUnlockedList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Map of achievement id -> unlockDate for quick lookup
-  const unlockDates = Object.fromEntries(
-    user.achievements.map((a) => [a.id, a.unlockDate])
-  );
+  const loadAchievements = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
+      const data = await getAchievements();
+      const list = Array.isArray(data?.achievements) ? data.achievements : [];
+      const userStats = Array.isArray(data?.stats) ? data.stats[0] : (data?.stats || null);
+      const unlocked = Array.isArray(data?.unlocked) ? data.unlocked : [];
+
+      setAchievements(list);
+      setStats(userStats);
+      setUnlockedList(unlocked);
+    } catch (err) {
+      console.error('Failed to load achievements:', err);
+      setError(err.message || 'Unable to load achievements.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAchievements();
+  }, [loadAchievements]);
+
+  // Map of achievementId -> unlockDate for quick lookup
+  const unlockDates = useMemo(() => {
+    const map = {};
+    for (const item of unlockedList) {
+      const key = item.achievementId || item.id;
+      if (key) {
+        map[key] = item.unlockDate || true;
+      }
+    }
+    return map;
+  }, [unlockedList]);
 
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => loadAchievements(true)}
+          colors={[GREEN]}
+          tintColor={GREEN}
+        />
+      }
     >
       <Text style={styles.title}>Your Achievements</Text>
 
-      {/* Achievement list */}
-      <View style={styles.card}>
-        {ACHIEVEMENT_DATA.map((achievement, index) => (
-          <AchievementRow
-            key={achievement.id}
-            achievement={achievement}
-            unlockDate={unlockDates[achievement.id]}
-            totalDistance={totalDistance}
-            isLast={index === ACHIEVEMENT_DATA.length - 1}
-          />
-        ))}
-      </View>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={GREEN} />
+          <Text style={styles.loadingText}>Loading achievements...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => loadAchievements()}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : achievements.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No achievements available.</Text>
+        </View>
+      ) : (
+        <View style={styles.card}>
+          {achievements.map((achievement, index) => {
+            const key = achievement.achievementId || achievement.id || String(index);
+            return (
+              <AchievementRow
+                key={key}
+                achievement={achievement}
+                unlockDate={unlockDates[key]}
+                stats={stats}
+                isLast={index === achievements.length - 1}
+              />
+            );
+          })}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -201,5 +323,50 @@ const styles = StyleSheet.create({
   },
   statusUnlocked: {
     color: GREEN,
+  },
+  loadingContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  errorContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#DC2626',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  retryButton: {
+    backgroundColor: GREEN,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  emptyContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
 });

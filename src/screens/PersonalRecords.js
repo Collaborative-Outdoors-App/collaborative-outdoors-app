@@ -1,45 +1,22 @@
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { CURRENT_USER, PERSONAL_RECORDS } from '../constants/currentUser';
+import { PERSONAL_RECORDS } from '../constants/currentUser';
 
 const GREEN = '#2F5D46';
+const EMPTY_VALUE = '--';
 
-// Duration records are stored in minutes, e.g. 135 -> "2hr 15min"
-function formatDuration(totalMinutes) {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) return `${m}min`;
-  if (m === 0) return `${h}hr`;
-  return `${h}hr ${m}min`;
-}
-
-function formatValue(record, value) {
-  if (record.unit === 'minutes') return formatDuration(value);
-  if (record.unit === 'km') return `${value}km`;
-  return `${value} ${record.unit}`;
-}
-
-function RecordRow({ record, userRecord, isLast }) {
+function RecordRow({ record, isLast }) {
   return (
     <View style={[styles.row, !isLast && styles.rowBorder]}>
       <View style={styles.left}>
         <Text style={styles.name}>{record.name}</Text>
-        <Text style={styles.setOn}>Set On: {userRecord ? userRecord.setOn : '---'}</Text>
+        <Text style={styles.setOn}>Set On: {EMPTY_VALUE}</Text>
       </View>
-      <Text style={styles.value}>
-        {userRecord ? formatValue(record, userRecord.value) : '---'}
-      </Text>
+      <Text style={styles.value}>{EMPTY_VALUE}</Text>
     </View>
   );
 }
 
 export default function PersonalRecordsScreen() {
-  const user = CURRENT_USER.currentUser;
-
-  // Map of record id -> the user's record for quick lookup
-  const userRecords = Object.fromEntries(
-    user.personalRecords.map((r) => [r.id, r])
-  );
-
   return (
     <ScrollView
       style={styles.screen}
@@ -53,7 +30,6 @@ export default function PersonalRecordsScreen() {
           <RecordRow
             key={record.id}
             record={record}
-            userRecord={userRecords[record.id]}
             isLast={index === PERSONAL_RECORDS.length - 1}
           />
         ))}
