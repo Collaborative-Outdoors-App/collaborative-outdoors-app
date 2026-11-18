@@ -1,9 +1,9 @@
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useState } from 'react';
 import AuthenticationButtons from '../components/AuthenticationButtons';
 import { colors, common } from '../styles/theme';
-import { CURRENT_USER as currentUserData } from '../constants/currentUser';
 import { useWearable } from '../wearable/WearableContext';
+import ConnectingView from '../screens/ConnectingView';
 
 function Checkbox({ label, checked, onToggle }) {
   return (
@@ -17,10 +17,16 @@ function Checkbox({ label, checked, onToggle }) {
 export default function ConnectWearableScreen({ navigation }) {
   const {
     status, device, bpm, shareWithGroup, setShareWithGroup,
+    heartRateAccess, setHeartRateAccess,
     attempt, maxAttempts, connect, disconnect, simulateLoss, retry, setActivity,
   } = useWearable();
-  const [googleFit, setGoogleFit] = useState(true);
-  const [appleHealth, setAppleHealth] = useState(false);
+  const [source, setSource] = useState(
+    Platform.OS === 'ios' ? 'Apple Health' : 'Health Connect'
+  );
+
+  if (status === 'connecting') {
+    return <ConnectingView via={source} onCancel={disconnect} />;
+  }
 
   if (status === 'lost') {
     return (
@@ -70,7 +76,7 @@ export default function ConnectWearableScreen({ navigation }) {
         <View style={[common.card, { gap: 14 }]}>
           <View style={styles.row}>
             <Text style={styles.label}>Heart rate access</Text>
-            <Text style={styles.value}>Allowed</Text>
+            <Switch value={heartRateAccess} onValueChange={setHeartRateAccess} trackColor={{ true: colors.primary }} />
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Share with group</Text>
@@ -93,36 +99,41 @@ export default function ConnectWearableScreen({ navigation }) {
     );
   }
 
-  const connecting = status === 'connecting';
-  const via = googleFit ? 'Google Fit' : appleHealth ? 'Apple Health' : 'Simulator';
-
   return (
     <ScrollView style={common.screen} contentContainerStyle={common.content}>
       <Text style={styles.heading}>Connect Wearable</Text>
       <Text style={styles.text}>Choose where your heart rate comes from</Text>
 
       <View style={{ gap: 14 }}>
-        <Checkbox label="Google Fit" checked={googleFit} onToggle={() => setGoogleFit((v) => !v)} />
-        <Checkbox label="Apple Health" checked={appleHealth} onToggle={() => setAppleHealth((v) => !v)} />
+        <Checkbox
+          label="Health Connect (Android)"
+          checked={source === 'Health Connect'}
+          onToggle={() => setSource('Health Connect')}
+        />
+        <Checkbox
+          label="Apple Health (iPhone)"
+          checked={source === 'Apple Health'}
+          onToggle={() => setSource('Apple Health')}
+        />
       </View>
 
-      <View style={[common.card, styles.row]}>
-        <Text style={styles.label}>Share heart rate with group</Text>
-        <Switch value={shareWithGroup} onValueChange={setShareWithGroup} trackColor={{ true: colors.primary }} />
+      <View style={[common.card, { gap: 14 }]}>
+        <View style={styles.row}>
+          <Text style={styles.label}>Allow heart rate access</Text>
+          <Switch value={heartRateAccess} onValueChange={setHeartRateAccess} trackColor={{ true: colors.primary }} />
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Share heart rate with group</Text>
+          <Switch value={shareWithGroup} onValueChange={setShareWithGroup} trackColor={{ true: colors.primary }} />
+        </View>
       </View>
 
-      <AuthenticationButtons
-        title={connecting ? 'Connecting...' : 'Connect'}
-        onPress={() => !connecting && connect(via)}
-      />
+      {!heartRateAccess ? (
+        <Text style={styles.small}>Turn on heart rate access to connect.</Text>
+      ) : null}
+
+      <AuthenticationButtons title="Connect" onPress={() => heartRateAccess && connect(source)} />
       <AuthenticationButtons title="Not Now" variant="secondary" onPress={() => navigation.goBack()} />
-
-      <Pressable onPress={() => navigation.navigate('OverexertionAlert')}>
-        <Text style={common.demoText}>Demo: show health alert</Text>
-      </Pressable>
-      <Pressable onPress={() => navigation.navigate('HealthDetails', { member: currentUserData.currentUser })}>
-        <Text style={common.demoText}>Demo: show member health</Text>
-      </Pressable>
     </ScrollView>
   );
 }
@@ -148,7 +159,6 @@ const styles = StyleSheet.create({
   bpmUnit: { fontSize: 18, color: colors.stone },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   label: { flex: 1, fontSize: 15, color: colors.ink },
-  value: { fontSize: 15, fontWeight: '600', color: colors.primary },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: colors.stone, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   boxOn: { backgroundColor: colors.primary, borderColor: colors.primary },

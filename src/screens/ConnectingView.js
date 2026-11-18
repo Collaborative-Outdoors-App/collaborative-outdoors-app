@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, common } from '../styles/theme';
 
 const STEPS = ['Searching for your device…', 'Pairing…', 'Reading heart rate…'];
 
@@ -12,8 +13,8 @@ export default function ConnectingView({ via, onCancel }) {
   }, []);
 
   return (
-    <View style={styles.wrap}>
-      <ActivityIndicator size="large" />
+    <View style={[common.screen, styles.wrap]}>
+      <ActivityIndicator size="large" color={colors.primary} />
       <Text style={styles.title}>Connecting to {via}</Text>
       <Text style={styles.step}>{STEPS[step]}</Text>
       <Pressable onPress={onCancel} style={styles.cancel}>
@@ -25,8 +26,8 @@ export default function ConnectingView({ via, onCancel }) {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  title: { fontSize: 20, fontWeight: '600', marginTop: 24 },
-  step: { fontSize: 15, marginTop: 8, opacity: 0.7 },
+  title: { fontSize: 20, fontWeight: '700', color: colors.ink, marginTop: 24 },
+  step: { fontSize: 15, color: colors.stone, marginTop: 8 },
   cancel: { marginTop: 32, padding: 12 },
-  cancelText: { fontSize: 16, textDecorationLine: 'underline' },
+  cancelText: { fontSize: 16, color: colors.stone, textDecorationLine: 'underline' },
 });

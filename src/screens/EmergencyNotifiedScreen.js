@@ -1,12 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import AuthenticationButtons from '../components/AuthenticationButtons';
 import { colors, common } from '../styles/theme';
-import { CURRENT_USER as currentUserData } from '../constants/currentUser';
-import { GROUPS as groupsData } from '../constants/groups';
-
-const currentUser = currentUserData.currentUser;
-const activeGroup = groupsData.groups.find((g) => g.groupId === currentUser.groupIds[0]);
-const elevatedMember = activeGroup.members.find((m) => m.status === 'elevated') ?? activeGroup.members[0];
+import { useCurrentUser } from '../auth/useCurrentUser';
 
 function Row({ label, value, last }) {
   return (
@@ -18,8 +13,10 @@ function Row({ label, value, last }) {
 }
 
 export default function EmergencyNotifiedScreen({ navigation, route }) {
-  const member = route.params?.member ?? elevatedMember;
-  const contact = member.emergencyContacts?.[0] ?? currentUser.emergencyContacts[0];
+  const me = useCurrentUser();
+  const params = route.params ?? {};
+  const contact = params.contact ?? me.emergencyContact;
+  const bpm = params.bpm;
 
   return (
     <ScrollView style={common.screen} contentContainerStyle={[common.content, styles.center]}>
@@ -29,14 +26,19 @@ export default function EmergencyNotifiedScreen({ navigation, route }) {
 
       <Text style={styles.title}>Emergency Contact Notified</Text>
       <Text style={styles.text}>
-        We sent a message to the emergency contact for {member.firstName} {member.lastName}.
+        {contact
+          ? `We sent a message to ${contact.name} about ${me.firstName || 'your'} high heart rate.`
+          : 'You have no emergency contact on file.'}
       </Text>
 
-      <View style={[common.card, styles.card]}>
-        <Row label="Contact" value={`${contact.firstName} ${contact.lastName}`} />
-        <Row label="Sent" value="Just now" />
-        <Row label="Includes" value="Last Known Location" last />
-      </View>
+      {contact ? (
+        <View style={[common.card, styles.card]}>
+          <Row label="Contact" value={contact.name} />
+          {contact.relationship ? <Row label="Relationship" value={contact.relationship} /> : null}
+          <Row label="Sent" value="Just now" />
+          <Row label="Includes" value={bpm ? `Heart rate (${bpm} bpm)` : 'Heart rate'} last />
+        </View>
+      ) : null}
 
       <View style={styles.actions}>
         <AuthenticationButtons title="Back to Wearable Setup" onPress={() => navigation.navigate('ConnectWearable')} />

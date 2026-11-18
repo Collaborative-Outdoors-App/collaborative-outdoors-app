@@ -4,10 +4,8 @@ import { parseDob, ageFromDob } from '../utils/age';
 import { navigationRef } from '../utils/navigationRef';
 import { createSimulator } from '../wearable/HeartRateSource';
 import { createMonitor, maxHeartRate } from '../wearable/Overexertion';
-import { notifyOverexertion } from '../wearable/Notify';
-import ConnectingView from '../screens/ConnectingView';
 
-const DEVICE_NAME = 'Simulated Fitbit Charge 6'; 
+const DEVICE_NAME = 'Simulated Fitbit Charge 6';
 const MAX_ATTEMPTS = 3;
 const RETRY_MS = 2500;
 
@@ -16,20 +14,21 @@ const WearableContext = createContext(null);
 export function WearableProvider({ children }) {
   const me = useCurrentUser();
   const dob = me.dateOfBirth ? parseDob(me.dateOfBirth) : null;
-  const age = dob ? ageFromDob(dob) : 30; 
+  const age = dob ? ageFromDob(dob) : 30;
   const maxHr = maxHeartRate(age);
 
-  const [status, setStatus] = useState('disconnected'); 
-  const [device, setDevice] = useState(null); 
+  const [status, setStatus] = useState('disconnected');
+  const [device, setDevice] = useState(null);
   const [bpm, setBpm] = useState(null);
   const [shareWithGroup, setShareWithGroup] = useState(true);
+  const [heartRateAccess, setHeartRateAccessState] = useState(true);
   const [attempt, setAttempt] = useState(0);
 
   const sourceRef = useRef(null);
   const monitorRef = useRef(null);
   const samplesRef = useRef([]);
   const timersRef = useRef([]);
-  const linkUpRef = useRef(true); 
+  const linkUpRef = useRef(true);
   const viaRef = useRef('Simulator');
 
   const clearTimers = () => {
@@ -47,9 +46,12 @@ export function WearableProvider({ children }) {
     monitorRef.current = createMonitor({
       maxHr,
       onAlert: (info) => {
-        notifyOverexertion(info);
         if (navigationRef.isReady()) {
-        navigationRef.navigate('OverexertionAlert', { self: true, bpm: info.bpm, pctOfMax: info.pctOfMax });
+          navigationRef.navigate('OverexertionAlert', {
+            self: true,
+            bpm: info.bpm,
+            pctOfMax: info.pctOfMax,
+          });
         }
       },
     });
@@ -66,19 +68,23 @@ export function WearableProvider({ children }) {
     setAttempt(0);
   }, [maxHr]);
 
-  const connect = useCallback((via = 'Simulator') => {
-    clearTimers();
-    viaRef.current = via;
-    linkUpRef.current = true;
-    samplesRef.current = [];
-    setStatus('connecting');
-    timersRef.current.push(
-      setTimeout(() => {
-        setDevice({ name: DEVICE_NAME, via });
-        startSource();
-      }, 3000)
-    );
-  }, [startSource]);
+  const connect = useCallback(
+    (via = 'Simulator') => {
+      if (!heartRateAccess) return;
+      clearTimers();
+      viaRef.current = via;
+      linkUpRef.current = true;
+      samplesRef.current = [];
+      setStatus('connecting');
+      timersRef.current.push(
+        setTimeout(() => {
+          setDevice({ name: DEVICE_NAME, via });
+          startSource();
+        }, 3000)
+      );
+    },
+    [startSource, heartRateAccess]
+  );
 
   const disconnect = useCallback(() => {
     clearTimers();
@@ -88,6 +94,14 @@ export function WearableProvider({ children }) {
     setBpm(null);
     setAttempt(0);
   }, []);
+
+  const setHeartRateAccess = useCallback(
+    (allowed) => {
+      setHeartRateAccessState(allowed);
+      if (!allowed) disconnect();
+    },
+    [disconnect]
+  );
 
   const runReconnect = useCallback(() => {
     clearTimers();
@@ -145,14 +159,12 @@ export function WearableProvider({ children }) {
   );
 
   const value = {
-    status, device, bpm, maxHr, shareWithGroup, setShareWithGroup,
+    status, device, bpm, maxHr,
+    shareWithGroup, setShareWithGroup,
+    heartRateAccess, setHeartRateAccess,
     attempt, maxAttempts: MAX_ATTEMPTS,
     connect, disconnect, simulateLoss, retry, setActivity, getSummary,
   };
-
-  if (status === 'connecting') {
-  return <ConnectingView via={"ConnectingView"} onCancel={disconnect} />;
-}
 
   return <WearableContext.Provider value={value}>{children}</WearableContext.Provider>;
 }
