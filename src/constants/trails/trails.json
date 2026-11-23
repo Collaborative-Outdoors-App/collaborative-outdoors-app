@@ -2,6 +2,7 @@
   {
     "trailId": "3374172",
     "name": "Dofasco 2000 Trail",
+    "linear": true,
     "operator": null,
     "network": null,
     "lengthKm": 9.47,
