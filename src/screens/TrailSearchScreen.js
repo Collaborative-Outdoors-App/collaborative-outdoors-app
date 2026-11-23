@@ -206,15 +206,6 @@ export default function TrailSearchScreen() {
           <Text style={styles.backButtonText}>‹</Text>
         </TouchableOpacity>
       )}
-      {hikeActive && selectedTrail?.linear && (
-        <View style={styles.topProgressCard}>
-          <TrailProgressBar
-            trail={selectedTrail}
-            userPosition={currentPosition?.coords}
-            compact
-          />
-        </View>
-      )}
       <Map
         style={styles.map}
         mapStyle={MAP_STYLE_URL}

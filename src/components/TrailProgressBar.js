@@ -52,12 +52,7 @@ export default function TrailProgressBar({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.headerRow}>
-        <View style={styles.leftHeader}>
-          <Text style={styles.title}>Trail Progress</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Linear Trail</Text>
-          </View>
-        </View>
+        <Text style={styles.title}>Trail Progress</Text>
         <Text style={styles.percentText}>{progressPercent}%</Text>
       </View>
 
@@ -72,11 +67,6 @@ export default function TrailProgressBar({
 
       <View style={styles.footerRow}>
         <Text style={styles.footerLabel}>Start (0%)</Text>
-        <Text style={styles.footerRemaining}>
-          {distanceToEndKm <= 0.05
-            ? "🎉 End reached!"
-            : `${distanceToEndKm} km to end`}
-        </Text>
         <Text style={styles.footerLabel}>End (100%)</Text>
       </View>
     </View>
