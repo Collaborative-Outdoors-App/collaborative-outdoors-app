@@ -52,7 +52,7 @@ export default function ActiveHikeBanner() {
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={handlePress}
-      style={[styles.banner, { top: insets.top + 6 }]}
+      style={[styles.banner, { bottom: Math.max(insets.bottom, 12) + 6 }]}
       accessibilityRole="button"
       accessibilityLabel={`Active hike in progress: ${hikeTrail?.name || "Trail"}. Tap to return.`}
     >
