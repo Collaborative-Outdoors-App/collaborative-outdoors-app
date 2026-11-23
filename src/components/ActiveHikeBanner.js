@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar } from "r
 import { SafeAreaInsetsContext } from "react-native-safe-area-context";
 import { useActiveHike } from "../context/ActiveHikeContext";
 import { navigationRef } from "../utils/navigationRef";
+import TrailProgressBar from "./TrailProgressBar";
 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -14,7 +15,7 @@ const formatTime = (seconds) => {
 };
 
 export default function ActiveHikeBanner() {
-  const { hikeActive, hikeTrail, hikeSeconds, hikeDistanceKm } = useActiveHike();
+  const { hikeActive, hikeTrail, hikeSeconds, hikeDistanceKm, currentPosition } = useActiveHike();
   const [currentRoute, setCurrentRoute] = useState("");
   const insetsContext = useContext(SafeAreaInsetsContext);
   const insets = insetsContext || {
@@ -56,19 +57,33 @@ export default function ActiveHikeBanner() {
       accessibilityRole="button"
       accessibilityLabel={`Active hike in progress: ${hikeTrail?.name || "Trail"}. Tap to return.`}
     >
-      <View style={styles.left}>
-        <View style={styles.dot} />
-        <View style={styles.textContainer}>
-          <Text style={styles.title} numberOfLines={1}>
-            {hikeTrail?.name || "Active Hike"}
-          </Text>
-          <Text style={styles.stats}>
-            ⏱ {formatTime(hikeSeconds)}  •  📍 {hikeDistanceKm.toFixed(2)} km
-          </Text>
+      <View style={styles.bannerContent}>
+        <View style={styles.row}>
+          <View style={styles.left}>
+            <View style={styles.dot} />
+            <View style={styles.textContainer}>
+              <Text style={styles.title} numberOfLines={1}>
+                {hikeTrail?.name || "Active Hike"}
+              </Text>
+              <Text style={styles.stats}>
+                ⏱ {formatTime(hikeSeconds)}  •  📍 {hikeDistanceKm.toFixed(2)} km
+              </Text>
+            </View>
+          </View>
+          <View style={styles.resumePill}>
+            <Text style={styles.resumeText}>Resume ›</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.resumePill}>
-        <Text style={styles.resumeText}>Resume ›</Text>
+
+        {hikeTrail?.linear && (
+          <View style={styles.bannerProgressWrapper}>
+            <TrailProgressBar
+              trail={hikeTrail}
+              userPosition={currentPosition}
+              compact
+            />
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -92,6 +107,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 8,
+  },
+  bannerContent: {
+    flex: 1,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  bannerProgressWrapper: {
+    marginTop: 8,
+    paddingTop: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255, 255, 255, 0.2)",
   },
   left: {
     flex: 1,

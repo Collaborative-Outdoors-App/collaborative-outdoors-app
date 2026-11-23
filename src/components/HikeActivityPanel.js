@@ -1,9 +1,11 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import TrailProgressBar from "./TrailProgressBar";
 
 export default function HikeActivityPanel({
   trail,
   seconds,
   distanceKm = 0,
+  userPosition = null,
   onEndHike,
   onMinimize,
 }) {
@@ -26,6 +28,14 @@ export default function HikeActivityPanel({
           <Text style={styles.toggleText}>▼ Minimize</Text>
         </TouchableOpacity>
       </View>
+
+      {trail?.linear && (
+        <TrailProgressBar
+          trail={trail}
+          userPosition={userPosition}
+          style={{ marginTop: 8 }}
+        />
+      )}
 
       <View style={styles.statsRow}>
         {stats.map(({ label, value }) => (

@@ -19,6 +19,7 @@ const ActiveHikeContext = createContext({
   hikeStartTime: null,
   hikeSeconds: 0,
   hikeDistanceKm: 0,
+  currentPosition: null,
   activeHikePanel: null,
   isPaused: false,
   startHike: () => {},
@@ -35,6 +36,7 @@ export function ActiveHikeProvider({ children }) {
   const [hikeStartTime, setHikeStartTime] = useState(null);
   const [hikeSeconds, setHikeSeconds] = useState(0);
   const [hikeDistanceKm, setHikeDistanceKm] = useState(0);
+  const [currentPosition, setCurrentPosition] = useState(null);
   const [activeHikePanel, setActiveHikePanel] = useState(null);
   const [isPaused, setIsPausedState] = useState(false);
 
@@ -90,6 +92,8 @@ export function ActiveHikeProvider({ children }) {
     (latitude, longitude) => {
       if (!hikeActiveRef.current || isPausedRef.current) return;
       if (latitude == null || longitude == null) return;
+
+      setCurrentPosition({ latitude, longitude });
 
       const lastPos = lastPositionRef.current;
       if (!lastPos) {
@@ -277,6 +281,7 @@ export function ActiveHikeProvider({ children }) {
       setHikeStartTime(now);
       setHikeSeconds(0);
       setHikeDistanceKm(0);
+      setCurrentPosition(initialPos ? { latitude: initialPos.latitude, longitude: initialPos.longitude } : null);
       setActiveHikePanel("activity");
       setIsPausedState(false);
 
@@ -309,6 +314,7 @@ export function ActiveHikeProvider({ children }) {
     setHikeStartTime(null);
     setHikeSeconds(0);
     setHikeDistanceKm(0);
+    setCurrentPosition(null);
     setActiveHikePanel(null);
     setIsPausedState(false);
 
@@ -336,6 +342,7 @@ export function ActiveHikeProvider({ children }) {
     hikeStartTime,
     hikeSeconds,
     hikeDistanceKm,
+    currentPosition,
     activeHikePanel,
     isPaused,
     startHike,
