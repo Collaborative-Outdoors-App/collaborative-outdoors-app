@@ -124,10 +124,6 @@ export default function TrailSearchScreen() {
     }
   };
 
-  const bottomOffset = hikeActive
-    ? activeHikePanel === "vitals" ? 315 : activeHikePanel === "activity" ? (selectedTrail?.linear ? 295 : 220) : 24
-    : selectedTrailId ? 140 : 24;
-
   const filteredTrails = useMemo(() => {
     if (!distanceFilter || distanceFilter.id === "all") return trailsData;
     return trailsData.filter((t) => {
@@ -138,9 +134,21 @@ export default function TrailSearchScreen() {
   }, [distanceFilter]);
 
   const selectedTrail = useMemo(() => {
-    if (hikeActive && hikeTrail) return hikeTrail;
-    return selectedTrailId ? trailsData.find((t) => String(t.trailId) === String(selectedTrailId)) : null;
+    const raw = hikeActive && hikeTrail
+      ? hikeTrail
+      : selectedTrailId
+      ? trailsData.find((t) => String(t.trailId) === String(selectedTrailId))
+      : null;
+    if (!raw) return null;
+    const fromData = trailsData.find((t) => String(t.trailId) === String(raw.trailId || raw.id));
+    return fromData ? { ...raw, ...fromData } : raw;
   }, [hikeActive, hikeTrail, selectedTrailId]);
+
+  const isLinearTrail = Boolean(selectedTrail?.linear);
+
+  const bottomOffset = hikeActive
+    ? activeHikePanel === "vitals" ? 315 : activeHikePanel === "activity" ? (isLinearTrail ? 315 : 220) : 24
+    : selectedTrailId ? 140 : 24;
 
   const selectedGeometry = useMemo(
     () => (selectedTrail ? getTrailGeometry(selectedTrail.trailId) : null),

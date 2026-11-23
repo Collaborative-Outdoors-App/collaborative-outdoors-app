@@ -10,6 +10,7 @@ import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LocationManager } from "@maplibre/maplibre-react-native";
 import { calculateDistanceKm } from "../utils/geo";
+import trailsData from "../constants/trails/trails.json";
 
 const STORAGE_KEY = "@outdoorz/active_hike";
 
@@ -156,15 +157,20 @@ export function ActiveHikeProvider({ children }) {
             const now = Date.now();
             const elapsed = Math.floor((now - data.hikeStartTime) / 1000);
 
+            const latestTrail = data.hikeTrail
+              ? trailsData.find((t) => String(t.trailId) === String(data.hikeTrail.trailId))
+              : null;
+            const fullTrail = latestTrail ? { ...data.hikeTrail, ...latestTrail } : data.hikeTrail;
+
             hikeActiveRef.current = true;
-            hikeTrailRef.current = data.hikeTrail;
+            hikeTrailRef.current = fullTrail;
             hikeStartTimeRef.current = data.hikeStartTime;
             hikeDistanceKmRef.current = data.hikeDistanceKm || 0;
             activeHikePanelRef.current = data.activeHikePanel || "activity";
             lastPositionRef.current = data.lastPosition || null;
 
             setHikeActive(true);
-            setHikeTrail(data.hikeTrail);
+            setHikeTrail(fullTrail);
             setHikeStartTime(data.hikeStartTime);
             setHikeSeconds(Math.max(0, elapsed));
             setHikeDistanceKm(data.hikeDistanceKm || 0);
@@ -268,8 +274,13 @@ export function ActiveHikeProvider({ children }) {
         ? { latitude: initialCoords.latitude, longitude: initialCoords.longitude, timestamp: now }
         : null;
 
+      const latestTrail = trail
+        ? trailsData.find((t) => String(t.trailId) === String(trail.trailId))
+        : null;
+      const fullTrail = latestTrail ? { ...trail, ...latestTrail } : trail;
+
       hikeActiveRef.current = true;
-      hikeTrailRef.current = trail;
+      hikeTrailRef.current = fullTrail;
       hikeStartTimeRef.current = now;
       hikeDistanceKmRef.current = 0;
       activeHikePanelRef.current = "activity";
@@ -277,7 +288,7 @@ export function ActiveHikeProvider({ children }) {
       lastPositionRef.current = initialPos;
 
       setHikeActive(true);
-      setHikeTrail(trail);
+      setHikeTrail(fullTrail);
       setHikeStartTime(now);
       setHikeSeconds(0);
       setHikeDistanceKm(0);
