@@ -22,6 +22,7 @@ import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 import HikeSummaryPopup from "../components/HikeSummaryPopup";
 import AchievementUnlockedPopup from "../components/AchievementUnlockedPopup";
+import { useActiveHike } from "../context/ActiveHikeContext";
 import { saveHike } from "../services/saveHikeService";
 import { calculateDistanceKm } from "../utils/geo";
 
@@ -42,19 +43,26 @@ const HIKE_PANEL_BTNS = [
 
 export default function TrailSearchScreen() {
   const navigation = useNavigation();
+  const {
+    hikeActive,
+    hikeTrail,
+    hikeSeconds,
+    hikeDistanceKm,
+    activeHikePanel,
+    setActiveHikePanel,
+    startHike,
+    endHike,
+    setIsPaused,
+  } = useActiveHike();
+
   const [selectedTrailId, setSelectedTrailId] = useState(null);
   const [distanceFilter, setDistanceFilter] = useState(null);
-  const [hikeActive, setHikeActive] = useState(false);
-  const [activeHikePanel, setActiveHikePanel] = useState(null);
-  const [hikeSeconds, setHikeSeconds] = useState(0);
-  const [hikeDistanceKm, setHikeDistanceKm] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [achievementQueue, setAchievementQueue] = useState([]);
   const [totalUnlockedCount, setTotalUnlockedCount] = useState(0);
   const [currentZoom, setCurrentZoom] = useState(INITIAL_VIEW_STATE.zoom);
   const [saveStatus, setSaveStatus] = useState("idle"); // "idle" | "saving" | "saved" | "error"
   const cameraRef = useRef(null);
-  const lastHikePositionRef = useRef(null);
   const currentPosition = useCurrentPosition();
 
   useEffect(() => {
@@ -63,45 +71,8 @@ export default function TrailSearchScreen() {
     });
   }, []);
 
-  // Distance calculation based on user movement during an active hike
-  useEffect(() => {
-    if (!hikeActive || showSummary || !currentPosition?.coords) return;
-
-    const { latitude, longitude, accuracy } = currentPosition.coords;
-    if (latitude == null || longitude == null) return;
-
-    // Filter out very poor accuracy readings (> 50m)
-    if (typeof accuracy === "number" && accuracy > 50) return;
-
-    if (!lastHikePositionRef.current) {
-      lastHikePositionRef.current = { latitude, longitude };
-      return;
-    }
-
-    const deltaKm = calculateDistanceKm(
-      lastHikePositionRef.current.latitude,
-      lastHikePositionRef.current.longitude,
-      latitude,
-      longitude
-    );
-
-    // Filter out micro GPS jitter (< 3 meters) and unreasonable jumps (> 500 meters)
-    if (deltaKm >= 0.003 && deltaKm < 0.5) {
-      setHikeDistanceKm((prev) => prev + deltaKm);
-      lastHikePositionRef.current = { latitude, longitude };
-    } else if (deltaKm >= 0.5) {
-      lastHikePositionRef.current = { latitude, longitude };
-    }
-  }, [currentPosition, hikeActive, showSummary]);
-
-  // Timer pauses while the summary popup is showing
-  useEffect(() => {
-    if (!hikeActive || showSummary) return;
-    const timer = setInterval(() => setHikeSeconds((s) => s + 1), 1000);
-    return () => clearInterval(timer);
-  }, [hikeActive, showSummary]);
-
   const handleEndHike = useCallback(async () => {
+    setIsPaused(true);
     setShowSummary(true);
 
     if (saveStatus === "saving" || saveStatus === "saved") return; // ignore double taps
@@ -124,26 +95,22 @@ export default function TrailSearchScreen() {
       console.warn("Failed to save hike:", err.message);
       setSaveStatus("error");
     }
-  }, [hikeSeconds, hikeDistanceKm, saveStatus]);
+  }, [hikeSeconds, hikeDistanceKm, saveStatus, setIsPaused]);
 
   const handleDismissAchievement = useCallback(() => {
     setAchievementQueue((prev) => prev.slice(1));
   }, []);
 
-  // Called from the popup: reset everything and go home
+  // Called from the popup: reset everything and go home (hike is NOT persistent after completion)
   const handleReturnHome = useCallback(() => {
     setShowSummary(false);
-    setHikeActive(false);
+    endHike();
     setSelectedTrailId(null);
-    setActiveHikePanel(null);
-    setHikeSeconds(0);
-    setHikeDistanceKm(0);
     setAchievementQueue([]);
     setTotalUnlockedCount(0);
     setSaveStatus("idle");
-    lastHikePositionRef.current = null;
     navigation.navigate("Home");
-  }, [navigation]);
+  }, [endHike, navigation]);
 
   const handleZoomToUserLocation = async () => {
     let coords = currentPosition?.coords || (await LocationManager.getCurrentPosition())?.coords;
@@ -169,10 +136,10 @@ export default function TrailSearchScreen() {
     });
   }, [distanceFilter]);
 
-  const selectedTrail = useMemo(
-    () => (selectedTrailId ? trailsData.find((t) => String(t.trailId) === String(selectedTrailId)) : null),
-    [selectedTrailId]
-  );
+  const selectedTrail = useMemo(() => {
+    if (hikeActive && hikeTrail) return hikeTrail;
+    return selectedTrailId ? trailsData.find((t) => String(t.trailId) === String(selectedTrailId)) : null;
+  }, [hikeActive, hikeTrail, selectedTrailId]);
 
   const selectedGeometry = useMemo(
     () => (selectedTrail ? getTrailGeometry(selectedTrail.trailId) : null),
@@ -182,6 +149,15 @@ export default function TrailSearchScreen() {
   const visibleTrails = useMemo(() => {
     return hikeActive ? (selectedTrail ? [selectedTrail] : []) : filteredTrails;
   }, [hikeActive, selectedTrail, filteredTrails]);
+
+  useEffect(() => {
+    if (hikeActive && hikeTrail?.bbox && cameraRef.current) {
+      cameraRef.current.fitBounds(
+        [hikeTrail.bbox.west, hikeTrail.bbox.south, hikeTrail.bbox.east, hikeTrail.bbox.north],
+        { padding: FIT_BOUNDS_PADDING, duration: 600 }
+      );
+    }
+  }, [hikeActive, hikeTrail]);
 
   const handleSelectTrail = (id) => {
     setSelectedTrailId(id);
@@ -209,6 +185,17 @@ export default function TrailSearchScreen() {
           <TrailSearchBar onSelectTrail={handleSelectTrail} trails={filteredTrails} />
           <DistanceFilter onFilterChange={setDistanceFilter} />
         </>
+      )}
+      {hikeActive && (
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate("Home")}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go to home screen"
+        >
+          <Text style={styles.backButtonText}>‹</Text>
+        </TouchableOpacity>
       )}
       <Map
         style={styles.map}
@@ -306,19 +293,16 @@ export default function TrailSearchScreen() {
           trail={selectedTrail}
           onClose={() => setSelectedTrailId(null)}
           onStartHike={() => {
-            setHikeActive(true);
-            setActiveHikePanel("activity");
-            setHikeSeconds(0);
-            setHikeDistanceKm(0);
-            setAchievementQueue([]);
-            setTotalUnlockedCount(0);
-            setSaveStatus("idle");
-            lastHikePositionRef.current = currentPosition?.coords
+            const initialCoords = currentPosition?.coords
               ? {
                   latitude: currentPosition.coords.latitude,
                   longitude: currentPosition.coords.longitude,
                 }
               : null;
+            startHike(selectedTrail, initialCoords);
+            setAchievementQueue([]);
+            setTotalUnlockedCount(0);
+            setSaveStatus("idle");
           }}
         />
       )}
@@ -346,6 +330,31 @@ export default function TrailSearchScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  backButton: {
+    position: "absolute",
+    top: 52,
+    left: 16,
+    zIndex: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  backButtonText: {
+    color: "#2F5D46",
+    fontSize: 30,
+    lineHeight: 32,
+    marginTop: -2,
+    marginRight: 2,
+    fontWeight: "600",
+  },
   hikeButtonsRow: {
     position: "absolute",
     left: 16,

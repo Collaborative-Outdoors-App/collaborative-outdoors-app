@@ -30,6 +30,8 @@ import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import { WearableProvider } from './src/wearable/WearableContext';
 import { navigationRef } from './src/utils/navigationRef';
 import { AuthProvider, useAuth } from "./src/auth/authContext";
+import { ActiveHikeProvider } from "./src/context/ActiveHikeContext";
+import ActiveHikeBanner from "./src/components/ActiveHikeBanner";
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +41,7 @@ function RootNavigator() {
 
   return (
     <NavigationContainer ref={navigationRef}>
+      <ActiveHikeBanner />
       <Stack.Navigator
         initialRouteName={user ? "Home" : "Login"}
         screenOptions={{
@@ -78,8 +81,10 @@ export default function App() {
   return (
     <AuthProvider>
       <WearableProvider>
-      <StatusBar style="auto" />
-      <RootNavigator />
+        <ActiveHikeProvider>
+          <StatusBar style="auto" />
+          <RootNavigator />
+        </ActiveHikeProvider>
       </WearableProvider>
     </AuthProvider>
   );

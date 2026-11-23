@@ -2,10 +2,20 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import Button from '../components/Button';
 import { useAuth } from '../auth/authContext';
+import { useActiveHike } from '../context/ActiveHikeContext';
 import { clearMapCache } from '../services/offlineMapService';
 
 
 const GREEN = '#2F5D46';
+
+const formatTime = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+};
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -16,6 +26,7 @@ function getGreeting() {
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
+  const { hikeActive, hikeTrail, hikeSeconds, hikeDistanceKm } = useActiveHike();
   const firstName = user?.displayName?.split(' ')[0] || 'there';
   
   const [clearing, setClearing] = useState(false);
@@ -78,12 +89,16 @@ export default function HomeScreen({ navigation }) {
 
       {/* Hero card */}
       <View style={styles.hero}>
-        <Text style={styles.heroTitle}>Ready to hit the trail?</Text>
+        <Text style={styles.heroTitle}>
+          {hikeActive ? "Hike in Progress" : "Ready to hit the trail?"}
+        </Text>
         <Text style={styles.heroSubtitle}>
-          Find a trail, start tracking, and bring your group along.
+          {hikeActive
+            ? `${hikeTrail?.name || "Active Trail"} • ⏱ ${formatTime(hikeSeconds)} • 📍 ${hikeDistanceKm.toFixed(2)} km`
+            : "Find a trail, start tracking, and bring your group along."}
         </Text>
         <Button
-          title="Start Hike"
+          title={hikeActive ? "Resume Hike" : "Start Hike"}
           variant="secondary"
           onPress={() => navigation.navigate('TrailSearch')}
           style={styles.heroButton}

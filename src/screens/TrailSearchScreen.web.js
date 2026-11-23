@@ -19,6 +19,7 @@ import HikeActivityPanel from "../components/HikeActivityPanel";
 import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 import HikeSummaryPopup from "../components/HikeSummaryPopup";
+import { useActiveHike } from "../context/ActiveHikeContext";
 import "./TrailSearchScreen.web.css";
 
 const MAPTILER_API_KEY = "4UhJpV0jRJOhzjgVw2b0";
@@ -44,15 +45,23 @@ function getTrailFeatures(trails) {
 
 export default function TrailSearchScreen() {
   const navigation = useNavigation();
+  const {
+    hikeActive,
+    hikeTrail,
+    hikeSeconds,
+    hikeDistanceKm,
+    activeHikePanel,
+    setActiveHikePanel,
+    startHike,
+    endHike,
+  } = useActiveHike();
+
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const mapDataRef = useRef({ trails: EMPTY_FEATURE_COLLECTION, geometry: EMPTY_FEATURE_COLLECTION });
   const onSelectTrailRef = useRef(null);
   const [selectedTrailId, setSelectedTrailId] = useState(null);
   const [distanceFilter, setDistanceFilter] = useState(null);
-  const [hikeActive, setHikeActive] = useState(false);
-  const [activeHikePanel, setActiveHikePanel] = useState(null);
-  const [hikeSeconds, setHikeSeconds] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [mapError, setMapError] = useState(null);
   const [locationError, setLocationError] = useState(null);
@@ -67,10 +76,12 @@ export default function TrailSearchScreen() {
   }, [distanceFilter]);
 
   const selectedTrail = useMemo(
-    () => (selectedTrailId
+    () => (hikeActive && hikeTrail
+      ? hikeTrail
+      : selectedTrailId
       ? trailsData.find((trail) => String(trail.trailId) === String(selectedTrailId))
       : null),
-    [selectedTrailId],
+    [hikeActive, hikeTrail, selectedTrailId],
   );
   const selectedGeometry = useMemo(
     () => (selectedTrail ? getTrailGeometry(selectedTrail.trailId) : null),
@@ -194,12 +205,6 @@ export default function TrailSearchScreen() {
     }
   }, [visibleTrails, selectedGeometry]);
 
-  useEffect(() => {
-    if (!hikeActive || showSummary) return undefined;
-    const timer = setInterval(() => setHikeSeconds((seconds) => seconds + 1), 1000);
-    return () => clearInterval(timer);
-  }, [hikeActive, showSummary]);
-
   const handleZoomToUserLocation = useCallback(() => {
     setLocationError(null);
     if (!navigator.geolocation) {
@@ -221,12 +226,10 @@ export default function TrailSearchScreen() {
 
   const handleReturnHome = useCallback(() => {
     setShowSummary(false);
-    setHikeActive(false);
+    endHike();
     setSelectedTrailId(null);
-    setActiveHikePanel(null);
-    setHikeSeconds(0);
     navigation.navigate("Home");
-  }, [navigation]);
+  }, [endHike, navigation]);
 
   const bottomOffset = hikeActive
     ? activeHikePanel === "vitals" ? 315 : activeHikePanel === "activity" ? 220 : 24
@@ -247,6 +250,17 @@ export default function TrailSearchScreen() {
           <TrailSearchBar onSelectTrail={handleSelectTrail} trails={filteredTrails} />
           <DistanceFilter onFilterChange={setDistanceFilter} />
         </>
+      )}
+      {hikeActive && (
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate("Home")}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go to home screen"
+        >
+          <Text style={styles.backButtonText}>‹</Text>
+        </TouchableOpacity>
       )}
 
       <LocationButton onPress={handleZoomToUserLocation} style={{ bottom: bottomOffset }} />
@@ -281,6 +295,7 @@ export default function TrailSearchScreen() {
             <HikeActivityPanel
               trail={selectedTrail}
               seconds={hikeSeconds}
+              distanceKm={hikeDistanceKm}
               onEndHike={() => setShowSummary(true)}
               onMinimize={() => setActiveHikePanel(null)}
             />
@@ -294,9 +309,7 @@ export default function TrailSearchScreen() {
           trail={selectedTrail}
           onClose={() => setSelectedTrailId(null)}
           onStartHike={() => {
-            setHikeActive(true);
-            setActiveHikePanel("activity");
-            setHikeSeconds(0);
+            startHike(selectedTrail, null);
           }}
         />
       )}
@@ -305,7 +318,7 @@ export default function TrailSearchScreen() {
         visible={showSummary}
         trail={selectedTrail}
         seconds={hikeSeconds}
-        distanceKm={0}
+        distanceKm={hikeDistanceKm}
         onReturnHome={handleReturnHome}
       />
     </View>
@@ -314,6 +327,31 @@ export default function TrailSearchScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, position: "relative", overflow: "hidden" },
+  backButton: {
+    position: "absolute",
+    top: 52,
+    left: 16,
+    zIndex: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  backButtonText: {
+    color: "#2F5D46",
+    fontSize: 30,
+    lineHeight: 32,
+    marginTop: -2,
+    marginRight: 2,
+    fontWeight: "600",
+  },
   mapMessage: {
     position: "absolute",
     top: 165,
