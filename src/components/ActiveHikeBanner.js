@@ -79,7 +79,7 @@ export default function ActiveHikeBanner() {
           <View style={styles.bannerProgressWrapper}>
             <TrailProgressBar
               trail={hikeTrail}
-              userPosition={currentPosition}
+              distanceKm={hikeDistanceKm}
               compact
             />
           </View>

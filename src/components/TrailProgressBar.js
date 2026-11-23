@@ -1,6 +1,4 @@
-import { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { calculateTrailProgress } from "../utils/trailProgress";
 
 /**
  * Renders a progress bar measuring how close the user is to the end of a linear trail.
@@ -10,25 +8,24 @@ import { calculateTrailProgress } from "../utils/trailProgress";
  */
 export default function TrailProgressBar({
   trail,
-  userPosition,
+  distanceKm = 0,
   compact = false,
   style,
 }) {
-  const progress = useMemo(() => {
-    return calculateTrailProgress(trail, userPosition);
-  }, [
-    trail,
-    userPosition?.latitude,
-    userPosition?.longitude,
-    userPosition?.lat,
-    userPosition?.lon,
-  ]);
-
-  if (!trail?.linear || !progress) {
+  if (!trail?.linear) {
     return null;
   }
 
-  const { progressPercent, distanceToEndKm } = progress;
+  const lengthKm = trail?.lengthKm || 0;
+  const safeDistance =
+    typeof distanceKm === "number" && !isNaN(distanceKm) && distanceKm > 0
+      ? distanceKm
+      : 0;
+
+  const progressPercent =
+    lengthKm > 0
+      ? Math.min(100, Math.max(0, Math.round((safeDistance / lengthKm) * 100)))
+      : 0;
 
   if (compact) {
     return (
@@ -41,7 +38,7 @@ export default function TrailProgressBar({
           <View
             style={[
               styles.compactFill,
-              { width: `${Math.max(0, Math.min(100, progressPercent))}%` },
+              { width: `${progressPercent}%` },
             ]}
           />
         </View>
@@ -52,12 +49,7 @@ export default function TrailProgressBar({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.headerRow}>
-        <View style={styles.leftHeader}>
-          <Text style={styles.title}>Trail Progress</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Linear Trail</Text>
-          </View>
-        </View>
+        <Text style={styles.title}>Trail Progress</Text>
         <Text style={styles.percentText}>{progressPercent}%</Text>
       </View>
 
@@ -65,18 +57,13 @@ export default function TrailProgressBar({
         <View
           style={[
             styles.fill,
-            { width: `${Math.max(0, Math.min(100, progressPercent))}%` },
+            { width: `${progressPercent}%` },
           ]}
         />
       </View>
 
       <View style={styles.footerRow}>
         <Text style={styles.footerLabel}>Start (0%)</Text>
-        <Text style={styles.footerRemaining}>
-          {distanceToEndKm <= 0.05
-            ? "🎉 End reached!"
-            : `${distanceToEndKm} km to end`}
-        </Text>
         <Text style={styles.footerLabel}>End (100%)</Text>
       </View>
     </View>
@@ -99,27 +86,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  leftHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   title: {
     fontSize: 13,
     fontWeight: "700",
     color: "#0f172a",
-  },
-  badge: {
-    backgroundColor: "#dcfce7",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgeText: {
-    color: "#15803d",
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
   },
   percentText: {
     fontSize: 15,
@@ -147,11 +117,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: "#64748b",
-  },
-  footerRemaining: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#2F5D46",
   },
   compactContainer: {
     width: "100%",

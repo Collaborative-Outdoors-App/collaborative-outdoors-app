@@ -5,7 +5,6 @@ export default function HikeActivityPanel({
   trail,
   seconds,
   distanceKm = 0,
-  userPosition = null,
   onEndHike,
   onMinimize,
 }) {
@@ -32,7 +31,7 @@ export default function HikeActivityPanel({
       {trail?.linear && (
         <TrailProgressBar
           trail={trail}
-          userPosition={userPosition}
+          distanceKm={safeDistance}
           style={{ marginTop: 8 }}
         />
       )}
