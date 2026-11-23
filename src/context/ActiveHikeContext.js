@@ -8,16 +8,8 @@ import {
 } from "react";
 import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LocationManager } from "@maplibre/maplibre-react-native";
 import { calculateDistanceKm } from "../utils/geo";
-
-let LocationManager = null;
-if (Platform.OS !== "web") {
-  try {
-    LocationManager = require("@maplibre/maplibre-react-native").LocationManager;
-  } catch (e) {
-    console.warn("[ActiveHike] Could not load native LocationManager:", e);
-  }
-}
 
 const STORAGE_KEY = "@outdoorz/active_hike";
 

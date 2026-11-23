@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useContext, useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar } from "react-native";
+import { SafeAreaInsetsContext } from "react-native-safe-area-context";
 import { useActiveHike } from "../context/ActiveHikeContext";
 import { navigationRef } from "../utils/navigationRef";
 
@@ -16,7 +16,13 @@ const formatTime = (seconds) => {
 export default function ActiveHikeBanner() {
   const { hikeActive, hikeTrail, hikeSeconds, hikeDistanceKm } = useActiveHike();
   const [currentRoute, setCurrentRoute] = useState("");
-  const insets = useSafeAreaInsets();
+  const insetsContext = useContext(SafeAreaInsetsContext);
+  const insets = insetsContext || {
+    top: Platform.OS === "android" ? StatusBar.currentHeight || 24 : 24,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  };
 
   useEffect(() => {
     const updateRoute = () => {
