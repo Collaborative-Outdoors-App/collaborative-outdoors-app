@@ -3,6 +3,11 @@ export const OPENWEATHER_API_KEY = process.env.EXPO_PUBLIC_OPENWEATHER_KEY;
 
 export const ONE_CALL_API_URL = "https://api.openweathermap.org/data/4.0/onecall/current";
 
+// In-memory weather cache: key -> { timestamp, data }
+const weatherCache = new Map();
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const ERROR_CACHE_TTL_MS = 60 * 1000; // 1 minute backoff for rate limits
+
 /**
  * Maps a weather condition string to an appropriate emoji icon.
  */
@@ -22,15 +27,27 @@ export function getWeatherEmoji(condition = "") {
  * Fetches current weather conditions (temperature, weather condition) for a trail's
  * start coordinates using OpenWeather One Call API 4.0.
  *
- * If internet is not available or the API is not callable, returns { unavailable: true }.
+ * Results are cached for 15 minutes to avoid redundant API requests.
  *
  * @param {number} lat - Trail start latitude
  * @param {number} lon - Trail start longitude
+ * @param {boolean} [forceRefresh=false] - If true, bypasses the cache
  * @returns {Promise<{ temp?: number, condition?: string, icon?: string, unavailable: boolean }>}
  */
-export async function getTrailWeather(lat, lon) {
+export async function getTrailWeather(lat, lon, forceRefresh = false) {
   if (lat == null || lon == null) {
     return { unavailable: true };
+  }
+
+  const cacheKey = `${Number(lat).toFixed(3)},${Number(lon).toFixed(3)}`;
+  const now = Date.now();
+  const cached = weatherCache.get(cacheKey);
+
+  if (!forceRefresh && cached) {
+    const ttl = cached.data?.unavailable ? ERROR_CACHE_TTL_MS : CACHE_TTL_MS;
+    if (now - cached.timestamp < ttl) {
+      return cached.data;
+    }
   }
 
   const url = `${ONE_CALL_API_URL}?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
@@ -46,7 +63,10 @@ export async function getTrailWeather(lat, lon) {
       console.warn(
         `[weatherService] One Call API 4.0 returned status ${res.status} (${res.statusText}).`
       );
-      return { unavailable: true };
+      const unavailableResult = { unavailable: true };
+      // Back off to prevent hammering rate limits
+      weatherCache.set(cacheKey, { timestamp: now, data: unavailableResult });
+      return unavailableResult;
     }
 
     const data = await res.json();
@@ -58,18 +78,25 @@ export async function getTrailWeather(lat, lon) {
     const condition = weatherObj?.main || weatherObj?.description;
 
     if (tempRaw == null || !condition) {
-      return { unavailable: true };
+      const unavailableResult = { unavailable: true };
+      weatherCache.set(cacheKey, { timestamp: now, data: unavailableResult });
+      return unavailableResult;
     }
 
-    return {
+    const result = {
       temp: Math.round(tempRaw),
       condition,
       icon: getWeatherEmoji(condition),
       unavailable: false,
     };
+
+    weatherCache.set(cacheKey, { timestamp: now, data: result });
+    return result;
   } catch (err) {
     clearTimeout(timeoutId);
     // Network error, offline, or request aborted
-    return { unavailable: true };
+    const unavailableResult = { unavailable: true };
+    weatherCache.set(cacheKey, { timestamp: now, data: unavailableResult });
+    return unavailableResult;
   }
 }

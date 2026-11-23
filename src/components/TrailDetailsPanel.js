@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  AppState,
 } from "react-native";
 import {
   isTrailDownloaded,
@@ -58,7 +57,7 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
   }, [refreshDownloadStatus]);
 
   const fetchWeather = useCallback(
-    async (showLoading = false) => {
+    async (showLoading = false, forceRefresh = false) => {
       const lat = trail?.start?.lat;
       const lon = trail?.start?.lon;
 
@@ -75,7 +74,7 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
       }
 
       try {
-        const data = await getTrailWeather(lat, lon);
+        const data = await getTrailWeather(lat, lon, forceRefresh);
         if (isMountedRef.current) {
           setWeather(data);
           setLoadingWeather(false);
@@ -90,30 +89,12 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
     [trail?.start?.lat, trail?.start?.lon]
   );
 
-  // Initial fetch on mount or trail change
+  // Fetch weather only when a trail is viewed
   useEffect(() => {
-    fetchWeather(true);
-  }, [fetchWeather]);
-
-  // Re-check when app regains focus (e.g. after toggling Wi-Fi in settings or control center)
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "active") {
-        fetchWeather(false);
-      }
-    });
-    return () => {
-      subscription.remove();
-    };
-  }, [fetchWeather]);
-
-  // Live polling check every 5 seconds to instantly reflect network connection drops/restorations
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchWeather(false);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [fetchWeather]);
+    if (trail?.start?.lat != null && trail?.start?.lon != null) {
+      fetchWeather(true);
+    }
+  }, [fetchWeather, trail?.start?.lat, trail?.start?.lon]);
 
   if (!trail) return null;
 
@@ -226,7 +207,7 @@ export default function TrailDetailsPanel({ trail, onClose, onStartHike }) {
               <TouchableOpacity
                 style={styles.weatherBadge}
                 activeOpacity={0.7}
-                onPress={() => fetchWeather(true)}
+                onPress={() => fetchWeather(true, true)}
               >
                 {weather.unavailable ? (
                   <Text style={styles.weatherUnavailableText}>Weather unavailable</Text>
