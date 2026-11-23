@@ -22,7 +22,6 @@ import GroupVitalsPanel from "../components/GroupVitalsPanel";
 import LocationButton from "../components/LocationButton";
 import HikeSummaryPopup from "../components/HikeSummaryPopup";
 import AchievementUnlockedPopup from "../components/AchievementUnlockedPopup";
-import TrailProgressBar from "../components/TrailProgressBar";
 import { useActiveHike } from "../context/ActiveHikeContext";
 import { saveHike } from "../services/saveHikeService";
 import { calculateDistanceKm } from "../utils/geo";
@@ -364,23 +363,6 @@ const styles = StyleSheet.create({
     marginTop: -2,
     marginRight: 2,
     fontWeight: "600",
-  },
-  topProgressCard: {
-    position: "absolute",
-    top: 52,
-    left: 66,
-    right: 16,
-    height: 42,
-    zIndex: 20,
-    backgroundColor: "#2F5D46",
-    borderRadius: 21,
-    paddingHorizontal: 16,
-    justifyContent: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   hikeButtonsRow: {
     position: "absolute",

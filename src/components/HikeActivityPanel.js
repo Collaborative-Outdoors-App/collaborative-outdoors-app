@@ -33,6 +33,7 @@ export default function HikeActivityPanel({
         <TrailProgressBar
           trail={trail}
           userPosition={userPosition}
+          distanceKm={safeDistance}
           style={{ marginTop: 8 }}
         />
       )}

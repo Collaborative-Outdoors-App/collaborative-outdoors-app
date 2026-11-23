@@ -80,6 +80,7 @@ export default function ActiveHikeBanner() {
             <TrailProgressBar
               trail={hikeTrail}
               userPosition={currentPosition}
+              distanceKm={hikeDistanceKm}
               compact
             />
           </View>

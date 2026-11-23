@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { calculateTrailProgress } from "../utils/trailProgress";
 
@@ -11,24 +11,62 @@ import { calculateTrailProgress } from "../utils/trailProgress";
 export default function TrailProgressBar({
   trail,
   userPosition,
+  distanceKm = 0,
   compact = false,
   style,
 }) {
-  const progress = useMemo(() => {
-    return calculateTrailProgress(trail, userPosition);
-  }, [
-    trail,
-    userPosition?.latitude,
-    userPosition?.longitude,
-    userPosition?.lat,
-    userPosition?.lon,
-  ]);
+  const displayPercentRef = useRef(0);
+  const lastTrailIdRef = useRef(trail?.trailId || trail?.id);
 
-  if (!trail?.linear || !progress) {
+  const trailId = trail?.trailId || trail?.id;
+  if (lastTrailIdRef.current !== trailId) {
+    lastTrailIdRef.current = trailId;
+    displayPercentRef.current = 0;
+  }
+
+  const userLat =
+    userPosition?.latitude ?? userPosition?.lat ?? userPosition?.coords?.latitude;
+  const userLon =
+    userPosition?.longitude ?? userPosition?.lon ?? userPosition?.coords?.longitude;
+
+  const normalizedUserPos = useMemo(() => {
+    if (userLat == null || userLon == null) return null;
+    return { latitude: userLat, longitude: userLon };
+  }, [userLat, userLon]);
+
+  const progress = useMemo(() => {
+    return calculateTrailProgress(trail, normalizedUserPos);
+  }, [trail, normalizedUserPos]);
+
+  if (!trail?.linear) {
     return null;
   }
 
-  const { progressPercent, distanceToEndKm } = progress;
+  const lengthKm = trail?.lengthKm || 0;
+  const safeDistance =
+    typeof distanceKm === "number" && !isNaN(distanceKm) && distanceKm > 0
+      ? distanceKm
+      : 0;
+
+  // Determine raw percentage: use projection if available, otherwise distance-based fallback
+  const rawPercent =
+    progress && normalizedUserPos
+      ? progress.progressPercent
+      : lengthKm > 0
+      ? Math.min(100, Math.round((safeDistance / lengthKm) * 100))
+      : 0;
+
+  // Anti-flicker smoothing:
+  // - Immediately advance forward as the user makes progress along the trail.
+  // - Absorb minor GPS horizontal jitter (1-3%) so progress doesn't decrease or bounce.
+  // - Allow downward adjustment only if user genuinely retreats (> 4% backwards).
+  if (rawPercent > displayPercentRef.current) {
+    displayPercentRef.current = rawPercent;
+  } else if (rawPercent < displayPercentRef.current - 4) {
+    displayPercentRef.current = rawPercent;
+  }
+
+  const progressPercent = Math.min(100, Math.max(0, displayPercentRef.current));
 
   if (compact) {
     return (
@@ -89,27 +127,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  leftHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   title: {
     fontSize: 13,
     fontWeight: "700",
     color: "#0f172a",
-  },
-  badge: {
-    backgroundColor: "#dcfce7",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgeText: {
-    color: "#15803d",
-    fontSize: 10,
-    fontWeight: "700",
-    textTransform: "uppercase",
   },
   percentText: {
     fontSize: 15,
@@ -137,11 +158,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: "#64748b",
-  },
-  footerRemaining: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#2F5D46",
   },
   compactContainer: {
     width: "100%",

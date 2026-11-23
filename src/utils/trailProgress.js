@@ -2,13 +2,103 @@ import { getTrailGeometry } from "../constants/trails/geometry";
 import { calculateDistanceKm } from "./geo";
 
 /**
- * Extracts a flattened array of [longitude, latitude] coordinates from trail geometry.
+ * Stitches an array of segments (from MultiLineString) into a single continuous polyline
+ * oriented from targetStart to the end of the trail.
+ *
+ * OpenStreetMap MultiLineString ways are unordered and may run in either direction.
+ * This connects each segment end-to-end starting at targetStart, reversing backward segments
+ * so that index 0 is at trail start and the last index is at trail end.
+ *
+ * @param {Array<Array<[number, number]>>} segments Array of [lon, lat] coordinates per segment
+ * @param {[number, number]|null} targetStart [lon, lat] of the trail's starting location
+ * @returns {Array<[number, number]>} Continuous array of [lon, lat] coordinates
+ */
+export function stitchMultiLineString(segments, targetStart) {
+  if (!segments || segments.length === 0) return [];
+  const remaining = segments.map((s) => [...s]);
+
+  // Find the segment whose start or end is closest to targetStart
+  let bestIdx = 0;
+  let bestD = Infinity;
+  let shouldReverse = false;
+
+  const startPt = targetStart || remaining[0][0];
+
+  for (let i = 0; i < remaining.length; i++) {
+    const s = remaining[i];
+    const d0 = calculateDistanceKm(s[0][1], s[0][0], startPt[1], startPt[0]);
+    const d1 = calculateDistanceKm(
+      s[s.length - 1][1],
+      s[s.length - 1][0],
+      startPt[1],
+      startPt[0]
+    );
+    if (d0 < bestD) {
+      bestD = d0;
+      bestIdx = i;
+      shouldReverse = false;
+    }
+    if (d1 < bestD) {
+      bestD = d1;
+      bestIdx = i;
+      shouldReverse = true;
+    }
+  }
+
+  let result = shouldReverse ? remaining[bestIdx].reverse() : remaining[bestIdx];
+  remaining.splice(bestIdx, 1);
+
+  // Greedily attach the nearest remaining segment to the growing polyline's tail
+  while (remaining.length > 0) {
+    const tail = result[result.length - 1];
+    let nextIdx = -1;
+    let nextRev = false;
+    let minD = Infinity;
+
+    for (let i = 0; i < remaining.length; i++) {
+      const s = remaining[i];
+      const d0 = calculateDistanceKm(tail[1], tail[0], s[0][1], s[0][0]);
+      const d1 = calculateDistanceKm(
+        tail[1],
+        tail[0],
+        s[s.length - 1][1],
+        s[s.length - 1][0]
+      );
+      if (d0 < minD) {
+        minD = d0;
+        nextIdx = i;
+        nextRev = false;
+      }
+      if (d1 < minD) {
+        minD = d1;
+        nextIdx = i;
+        nextRev = true;
+      }
+    }
+
+    if (nextIdx === -1) break;
+    const nextSeg = nextRev ? remaining[nextIdx].reverse() : remaining[nextIdx];
+    // If the connection gap is practically zero (< 5 meters), skip duplicate seam point
+    if (minD < 0.005) {
+      result.push(...nextSeg.slice(1));
+    } else {
+      result.push(...nextSeg);
+    }
+    remaining.splice(nextIdx, 1);
+  }
+
+  return result;
+}
+
+/**
+ * Extracts a flattened, continuous array of [longitude, latitude] coordinates from trail geometry.
  * Supports both LineString and MultiLineString geometries.
  *
  * @param {Object} geometry GeoJSON Feature or Geometry object
+ * @param {[number, number]|null} targetStart Optional [lon, lat] of trail start
  * @returns {Array<[number, number]>} Array of [lon, lat] coordinates
  */
-export function getTrailCoordinates(geometry) {
+export function getTrailCoordinates(geometry, targetStart) {
   if (!geometry) return [];
   const geom = geometry.geometry || geometry;
   if (!geom || !geom.coordinates) return [];
@@ -17,14 +107,7 @@ export function getTrailCoordinates(geometry) {
     return geom.coordinates;
   }
   if (geom.type === "MultiLineString") {
-    // Flatten array of line segments
-    const flat = [];
-    for (const segment of geom.coordinates) {
-      if (Array.isArray(segment)) {
-        flat.push(...segment);
-      }
-    }
-    return flat;
+    return stitchMultiLineString(geom.coordinates, targetStart);
   }
   return [];
 }
@@ -36,7 +119,7 @@ const trailPolylineCache = new Map();
  * Retrieves or builds the oriented polyline for a linear trail, ensuring
  * index 0 is at trail.start and the last index is at the trail's end.
  */
-function getOrientedPolyline(trail) {
+export function getOrientedPolyline(trail) {
   const trailId = String(trail.trailId || trail.id || "");
   if (!trailId) return null;
 
@@ -45,7 +128,8 @@ function getOrientedPolyline(trail) {
   }
 
   const geometry = getTrailGeometry(trailId);
-  let coords = getTrailCoordinates(geometry);
+  const targetStart = trail.start ? [trail.start.lon, trail.start.lat] : null;
+  let coords = getTrailCoordinates(geometry, targetStart);
 
   if (!coords || coords.length < 2) {
     return null;
@@ -105,7 +189,7 @@ function getOrientedPolyline(trail) {
  * 0% progress means user is at the start.
  * 100% progress means user is at the end.
  *
- * Uses closest-point perpendicular projection along the trail polyline.
+ * Uses closest-point perpendicular projection along the stitched trail polyline.
  *
  * @param {Object} trail Trail metadata object (must have linear === true)
  * @param {Object|null} userCoords User coordinates { latitude, longitude } or null
@@ -137,8 +221,10 @@ export function calculateTrailProgress(trail, userCoords) {
   const { coords, segmentLengths, cumulativeDistances, totalLengthKm, startPoint, endPoint } =
     polyline;
 
-  const userLat = userCoords?.latitude ?? userCoords?.lat;
-  const userLon = userCoords?.longitude ?? userCoords?.lon;
+  const userLat =
+    userCoords?.latitude ?? userCoords?.lat ?? userCoords?.coords?.latitude;
+  const userLon =
+    userCoords?.longitude ?? userCoords?.lon ?? userCoords?.coords?.longitude;
 
   // If user location is not yet available, default to start (0%)
   if (userLat == null || userLon == null) {
@@ -154,7 +240,7 @@ export function calculateTrailProgress(trail, userCoords) {
     };
   }
 
-  // Find the closest point along the polyline to the user
+  // Find the closest point along the continuous polyline to the user
   let minDistanceSq = Infinity;
   let bestDistAlongKm = 0;
 
@@ -194,7 +280,7 @@ export function calculateTrailProgress(trail, userCoords) {
   }
 
   const progressFraction = Math.max(0, Math.min(1, bestDistAlongKm / totalLengthKm));
-  const progressPercent = Math.round(progressFraction * 100);
+  const progressPercent = Math.min(100, Math.max(0, Math.round(progressFraction * 100)));
   const distanceToEndKm = Math.max(0, totalLengthKm - bestDistAlongKm);
 
   return {
