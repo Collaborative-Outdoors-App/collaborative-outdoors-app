@@ -117,8 +117,8 @@ export function ActiveHikeProvider({ children }) {
         longitude
       );
 
-      // Filter out micro-jitter (< 3 meters) and impossible teleports (> 100 km)
-      if (deltaKm >= 0.003 && deltaKm < 100) {
+      // Filter out micro-jitter (< 3 meters) and impossible teleports (> 1 km)
+      if (deltaKm >= 0.003 && deltaKm < 1) {
         setHikeDistanceKm((prev) => {
           const nextDistance = prev + deltaKm;
           hikeDistanceKmRef.current = nextDistance;
@@ -136,7 +136,7 @@ export function ActiveHikeProvider({ children }) {
         });
 
         lastPositionRef.current = { latitude, longitude, timestamp: Date.now() };
-      } else if (deltaKm >= 100) {
+      } else if (deltaKm >= 1) {
         // Reset anchor point if there was a massive jump without adding erroneous distance
         lastPositionRef.current = { latitude, longitude, timestamp: Date.now() };
       }
